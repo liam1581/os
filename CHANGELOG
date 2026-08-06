@@ -1,3 +1,10 @@
+1.2:
+    - Added KERNEL PANIC
+    - Added easy way to change between TESTING and PRODUCTION kernel mode (IN MAKEFILE)
+        - With option KERNELPANIC you can cause an example Kernel Panic screen
+    - Made the testeng_keyboard_handler fully unique (so the gcc doesnt scream at me because variables are declared multiple times)
+    - Added selectable kernels in grub (testing, production and kernelpanic)
+
 1.1:
     - Changed the entrypoint so it's prepared for production builds
     - Changed Makefile output text to have some ✨Style✨

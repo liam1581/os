@@ -2,6 +2,8 @@
 
 extern "C" {
     #include "command_functions.h"
+
+    #include "debug.h"
 }
 
 int strcmp(const char* a, const char* b) {
@@ -48,8 +50,11 @@ void Commands::helpMessage(const char* commandName, const char* helpMessage) {
     }
 }
 
-void Commands::handleCommand(char keyboard_buffer[1024]) {
+void Commands::handleCommand(char keyboard_buffer[]) {
+    DBG_PRINTS("Entered function \"Commands::handleCommand\" with argument: ");
+    DBG_PRINTLNS(keyboard_buffer);
     for (int i = 0; i < commandCount; i++) {
+        DBG_PRINTLNS("Entered for loop");
         if (strcmp(commands[i].name, keyboard_buffer) == 0) {
             if (commands[i].func != nullptr) {
                 commands[i].func();
@@ -66,9 +71,4 @@ void Commands::registerCommands() {
 
     commands.add("help", 0);
     commands.executes("help", cmd_help);
-}
-
-extern "C" void c_handleCommand(char keyboard_buffer[1024]) {
-    Commands commands;
-    commands.handleCommand(keyboard_buffer);
 }

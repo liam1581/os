@@ -1,4 +1,5 @@
 #include "main.h"
+
 #include "csh/csh.h"
 #include "commands.hpp"
 #include "keyboard_handler.hpp"
@@ -8,7 +9,7 @@ extern "C" {
     #include "command_functions.h"
 }
 
-extern "C" void cpp_main() {
+void cpp_main() {
     clear_screen();
     print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
     println("Welcome to our 64-bit kernel!\n");
@@ -16,8 +17,8 @@ extern "C" void cpp_main() {
     cmd_atapi_init();
     cmd_fat_init();
 
-    Commands commands;
-    commands.registerCommands();
+    // Commands commands;
+    // commands.registerCommands();
 
     //testingCsh();
 
