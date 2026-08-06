@@ -1,0 +1,6 @@
+1.1:
+    - Changed the entrypoint so it's prepared for production builds
+    - Changed Makefile output text to have some ✨Style✨
+
+1.0:
+    Initial commit, i dont wanna count all the features xD
