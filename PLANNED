@@ -3,3 +3,4 @@ Planned for future versions:
     make programs able to have c++
     make the commands.cpp/commands.hpp command builder system work
     add a way to easily change between testing mode and normal mode
+    make the SeaShell (csh) work
