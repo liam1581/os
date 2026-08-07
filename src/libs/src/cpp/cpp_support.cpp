@@ -2,19 +2,16 @@
 #include <stdint.h>
 #include "cpp/cpp_support.h"
 
-namespace {
-    constexpr size_t HEAP_SIZE = 64 * 1024;
-    alignas(16) uint8_t heap[HEAP_SIZE];
-    size_t heap_offset = 0;
+extern "C" {
+    #include "kheap.h"
 }
 
 void* operator new(size_t size) {
-    if (heap_offset + size > HEAP_SIZE) {
+    void* ptr = kmalloc(size);
+    if (!ptr) {
         // Out of memory
         while (1) { asm volatile("hlt"); }
     }
-    void* ptr = &heap[heap_offset];
-    heap_offset += size;
     return ptr;
 }
 
@@ -22,10 +19,10 @@ void* operator new[](size_t size) {
     return operator new(size);
 }
 
-void operator delete(void*) noexcept {}
-void operator delete(void*, size_t) noexcept {}
-void operator delete[](void*) noexcept {}
-void operator delete[](void*, size_t) noexcept {}
+void operator delete(void* ptr) noexcept { kfree(ptr); }
+void operator delete(void* ptr, size_t) noexcept { kfree(ptr); }
+void operator delete[](void* ptr) noexcept { kfree(ptr); }
+void operator delete[](void* ptr, size_t) noexcept { kfree(ptr); }
 
 extern "C" void __cxa_pure_virtual() {
     while (1) { asm volatile("hlt"); }

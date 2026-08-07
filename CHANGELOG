@@ -1,3 +1,7 @@
+1.3:
+    - Added memory allocation functions for the cpp heap and for allocating memory in general
+    - Added memory display for TESTING and PRODUCTION build at boot
+
 1.2:
     - Added KERNEL PANIC
     - Added easy way to change between TESTING and PRODUCTION kernel mode (IN MAKEFILE)

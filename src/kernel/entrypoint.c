@@ -1,8 +1,16 @@
 #include "cpp/cpp_support.h"
 
+#include <stdint.h>
+
+#include "pmm.h"
+#include "kheap.h"
+
 #include "KERNEL.h"
 
-void kernel_main() {
+void kernel_main(uint64_t multiboot_info_addr) {
+    pmm_init(multiboot_info_addr);
+    kheap_init();
+    
     call_global_constructors();
     
 #ifdef PRODUCTION

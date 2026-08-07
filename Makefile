@@ -192,7 +192,7 @@ targets/x86_64/iso/data/%.lhe: src/programs/%.c
 	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x46,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
 	@cat build/programs/$(STEM).bin >> $@
 
-.PHONY: build clean run build_clean stepinit
+.PHONY: build clean clean_all run build_clean stepinit
 
 stepinit:
 	@mkdir -p build
@@ -216,6 +216,13 @@ build: stepinit $(program_c_lse_files) $(program_lse_files) $(foreach v,$(VARIAN
 
 clean:
 	@printf "$(YELLOW)$(BOLD)[clean]$(RESET) removing build artifacts...\n"
+	@rm -rf build dist
+	@rm -rf targets/x86_64/iso/data/*.lhe targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
+	@printf "$(GREEN)Clean complete$(RESET)\n"
+
+clean_all:
+	@printf "$(YELLOW)$(BOLD)[clean_all]$(RESET) removing ALL build artifacts"
+	@rm -rf targets/x86_64/disk.img
 	@rm -rf build dist
 	@rm -rf targets/x86_64/iso/data/*.lhe targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
 	@printf "$(GREEN)Clean complete$(RESET)\n"

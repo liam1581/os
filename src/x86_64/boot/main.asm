@@ -1,9 +1,19 @@
 global start
+global mb_info_ptr
 extern long_mode_start
+
+; Number of 1GiB regions to identity-map (2MiB huge pages). Must be kept in
+; sync with PMM_MAX_MEMORY in src/libs/src/pmm.c -- physical memory beyond
+; this is never mapped, so the PMM can't hand it out even if it's present.
+MAPPED_GIB equ 16
 
 section .text
 bits 32
 start:
+	; GRUB passes the multiboot2 info pointer in ebx. Save it immediately,
+	; before check_cpuid/check_long_mode (which use cpuid, clobbering ebx).
+	mov [mb_info_ptr], ebx
+
 	mov esp, stack_top
 
 	call check_multiboot
@@ -64,22 +74,50 @@ setup_page_tables:
 	mov eax, page_table_l3
 	or eax, 0b11 ; present, writable
 	mov [page_table_l4], eax
-	
-	mov eax, page_table_l2
+
+	; L3[0..MAPPED_GIB-1], each pointing to its own 1GiB-worth L2 table
+	mov ecx, 0
+.l3_loop:
+	mov eax, ecx
+	imul eax, eax, 4096 ; offset of the i-th L2 table (each is one page)
+	add eax, page_table_l2
 	or eax, 0b11 ; present, writable
-	mov [page_table_l3], eax
+	mov [page_table_l3 + ecx * 8], eax
 
-	mov ecx, 0 ; counter
-.loop:
+	inc ecx
+	cmp ecx, MAPPED_GIB
+	jne .l3_loop
 
-	mov eax, 0x200000 ; 2MiB
-	mul ecx
-	or eax, 0b10000011 ; present, writable, huge page
-	mov [page_table_l2 + ecx * 8], eax
+	; L2 entries: MAPPED_GIB * 512 huge (2MiB) pages, identity-mapped.
+	; ecx is a global 2MiB-page index (0 .. MAPPED_GIB*512-1). The physical
+	; address for entry ecx is (ecx << 21), which can exceed 32 bits, so
+	; the low/high dwords of the PTE are built separately via shifts
+	; rather than with `mul`, which would silently truncate.
+	mov ecx, 0
+.l2_loop:
+	mov edx, ecx
+	shr edx, 11          ; high 32 bits of the physical address
 
-	inc ecx ; increment counter
-	cmp ecx, 512 ; checks if the whole table is mapped
-	jne .loop ; if not, continue
+	mov eax, ecx
+	shl eax, 21           ; low 32 bits of the physical address
+	or eax, 0b10000011    ; present, writable, huge page (PS)
+
+	; esi = &page_table_l2[ (ecx>>9) * 4096 + (ecx & 0x1FF) * 8 ]
+	mov esi, ecx
+	shr esi, 9
+	shl esi, 12            ; * 4096 (bytes per L2 table)
+	mov ebp, ecx
+	and ebp, 0x1FF
+	shl ebp, 3               ; * 8 (bytes per PTE)
+	add esi, ebp
+	add esi, page_table_l2
+
+	mov [esi], eax
+	mov [esi + 4], edx
+
+	inc ecx
+	cmp ecx, MAPPED_GIB * 512
+	jne .l2_loop
 
 	ret
 
@@ -121,10 +159,14 @@ page_table_l4:
 page_table_l3:
 	resb 4096
 page_table_l2:
-	resb 4096
+	resb 4096 * MAPPED_GIB
 stack_bottom:
 	resb 4096 * 4
 stack_top:
+
+align 4
+mb_info_ptr:
+	resd 1
 
 section .rodata
 gdt64:
