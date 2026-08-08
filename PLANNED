@@ -1,5 +1,5 @@
 Planned for future versions:
-    make the libs c++
+    * make the libs c++ *
     make programs able to have c++
     make the SeaShell (csh) work
     add a Picture Rendering mode (uncompressed images)

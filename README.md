@@ -11,4 +11,6 @@ For going inside the Docker container:
 docker exec -it myos_cpp bash
 ```
 
-Please also view and edit the Makefile:256, it uses a Windows Path for PuTTY since this was originally coded in wsl
+Please also view the CHANGELOG file for information about what changed between versions
+
+Please also view and edit the Makefile:258, it uses a Windows Path for PuTTY since this was originally coded in wsl
