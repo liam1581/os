@@ -2,6 +2,8 @@ CC := x86_64-elf-gcc
 CXX := x86_64-elf-g++
 LD := x86_64-elf-ld
 
+FAT_DISK_SIZE := 1024
+
 # ============================================================================
 #  Build variants
 #  Each variant only differs in which single DEFINES flag is appended to the
@@ -18,7 +20,7 @@ ISO_VARIANT := testing
 
 # DEFINES used for building the userspace programs (.lhe files). These are
 # not kernel-variant specific, so a single fixed set is used.
-DEFINES := -DKEYBOARD_QWERTZ -DDEBUG -DTESTING
+DEFINES := -DKEYBOARD_QWERTZ -DDEBUG -DPRODUCTION
 
 kernel_c_source_files := $(shell find src/kernel -name *.c)
 kernel_cpp_source_files := $(shell find src/kernel -name *.cpp)
@@ -221,7 +223,7 @@ clean:
 	@printf "$(GREEN)Clean complete$(RESET)\n"
 
 clean_all:
-	@printf "$(YELLOW)$(BOLD)[clean_all]$(RESET) removing ALL build artifacts"
+	@printf "$(YELLOW)$(BOLD)[clean_all]$(RESET) removing ALL build artifacts...\n"
 	@rm -rf targets/x86_64/disk.img
 	@rm -rf build dist
 	@rm -rf targets/x86_64/iso/data/*.lhe targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
@@ -235,7 +237,7 @@ run:
 	@docker exec -it myos_cpp make --no-print-directory build_clean
 	@if [ ! -f targets/x86_64/disk.img ]; then \
 		printf "$(BLUE)$(BOLD)[disk]$(RESET) creating virtual disk...\n"; \
-		dd if=/dev/zero of=targets/x86_64/disk.img bs=1M count=8096 status=none; \
+		dd if=/dev/zero of=targets/x86_64/disk.img bs=1M count=$(FAT_DISK_SIZE) status=none; \
 		mkfs.fat -F 32 targets/x86_64/disk.img > /dev/null; \
 	fi
 	@if [ -d targets/x86_64/disk ] && [ "$$(ls -A targets/x86_64/disk 2>/dev/null)" ]; then \

@@ -1,3 +1,4 @@
+#include "krnl.h"
 #include "print.h"
 
 void KERNEL_PANIC(const char* filename, const char* error) {

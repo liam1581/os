@@ -1,13 +1,10 @@
 #include "testing.h"
 #include "testing_keyboard_handler.hpp"
-#include "commands.hpp"
 
 extern "C" {
-    // includes
     #include "print.h"
     #include "pmm.h"
 }
-
 
 extern "C" void kernel_testing() {
     clear_screen();
@@ -24,8 +21,7 @@ extern "C" void kernel_testing() {
     println(" MiB free\n");
     print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
 
-    // Commands commands;
-    // commands.registerCommands();
+    print("> ");
 
     keyboard_init();
     keyboard_set_handler(testing_handle_input);

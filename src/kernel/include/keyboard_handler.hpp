@@ -1,8 +1,12 @@
 #pragma once
 
+#include "commands.hpp"
+
 extern "C" {
     #include "drivers/keyboard.h"
 }
+
+extern Commands commands;
 
 void keyboard_buffer_clear();
 void handle_input(struct KeyboardEvent event);

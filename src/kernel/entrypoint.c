@@ -5,7 +5,7 @@
 #include "pmm.h"
 #include "kheap.h"
 
-#include "KERNEL.h"
+#include "krnl.h"
 
 void kernel_main(uint64_t multiboot_info_addr) {
     pmm_init(multiboot_info_addr);

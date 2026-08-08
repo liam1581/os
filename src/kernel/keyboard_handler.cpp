@@ -1,16 +1,17 @@
 #include "keyboard_handler.hpp"
 
+#include "commands.hpp"
+#include "command_functions.hpp"
+
 extern "C" {
     #include "print.h"
-    #include "string.h"
-    #include "command_functions.h"
-    #include "drivers/keycodes.h"
-    #include "drivers/keyboard.h"
     #include "drivers/power.h"
 }
 
 bool capsLockActive = false;
 bool cmdMode = true;
+
+extern Commands commands;
 
 size_t keyboard_buffer_length = 0;
 size_t keyboard_buffer_index = 0;
@@ -62,51 +63,7 @@ void handle_input(struct KeyboardEvent event) {
             printc('\n');
 
             if (cmdMode) {
-                if (strcmp(keyboard_buffer, "help") == 0) {
-                    cmd_help();
-                } else if (starts_with(keyboard_buffer, "echo")) {
-                    cmd_echo(keyboard_buffer);
-                } else if (strcmp(keyboard_buffer, "cls") == 0) {
-                    cmd_cls();
-                } else if (strcmp(keyboard_buffer, "reboot") == 0) {
-                    cmd_restart();
-                } else if (strcmp(keyboard_buffer, "shutdown") == 0) {
-                    cmd_shutdown();
-                }
-
-                else if (starts_with(keyboard_buffer, "serial.write ")) {
-                    cmd_serial_write(keyboard_buffer);
-                } else if (starts_with(keyboard_buffer, "serial.init ")) {
-                    cmd_serial_init(keyboard_buffer);
-                }
-
-                else if (strcmp(keyboard_buffer, "cd.init") == 0) {
-                    cmd_atapi_init();
-                } else if (strcmp(keyboard_buffer, "ls") == 0) {
-                    cmd_ls();
-                } else if (starts_with(keyboard_buffer, "cat ")) {
-                    cmd_cat(keyboard_buffer);
-                } else if (starts_with(keyboard_buffer, "run ")) {
-                    cmd_run(keyboard_buffer);
-                } else if (starts_with(keyboard_buffer, "cd ")) {
-                    cmd_cd(keyboard_buffer);
-                }
-
-                else if (strcmp(keyboard_buffer, "fat.init") == 0) {
-                    cmd_fat_init();
-                } else if (strcmp(keyboard_buffer, "fat.ls") == 0) {
-                    cmd_fat_ls();
-                } else if (starts_with(keyboard_buffer, "fat.cat ")) {
-                    cmd_fat_cat(keyboard_buffer);
-                }
-            
-                else if (keyboard_buffer_length > 0) {
-                    print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-                    print("Unknown command: ");
-                    print(keyboard_buffer);
-                    print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-                    printc('\n');
-                }
+                commands.handleCommand(keyboard_buffer);
 
                 print("D:");
                 print(get_current_dir());

@@ -1,16 +1,13 @@
 #include "testing_keyboard_handler.hpp"
-#include "commands.hpp"
+
+#include "command_functions.hpp"
 
 extern "C" {
     #include "print.h"
     #include "string.h"
-    #include "command_functions.h"
-    #include "drivers/keycodes.h"
-    #include "drivers/keyboard.h"
+
     #include "drivers/power.h"
 }
-
-Commands commands;
 
 bool testing_capsLockActive = false;
 bool testing_cmdMode = true;
@@ -64,10 +61,7 @@ void testing_handle_input(struct KeyboardEvent event) {
             testing_keyboard_buffer[testing_keyboard_buffer_length] = '\0';
             printc('\n');
 
-            if (testing_cmdMode) {
-                commands.registerCommands();
-                commands.handleCommand(testing_keyboard_buffer);
-                
+            if (testing_cmdMode) {                
                 // print("D:");
                 // print(get_current_dir());
                 print("> ");

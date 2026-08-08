@@ -3,12 +3,14 @@
 #include "csh/csh.h"
 #include "commands.hpp"
 #include "keyboard_handler.hpp"
+#include "command_functions.hpp"
 
 extern "C" {
     #include "print.h"
-    #include "command_functions.h"
     #include "pmm.h"
 }
+
+Commands commands;
 
 void cpp_main() {
     clear_screen();
@@ -23,11 +25,10 @@ void cpp_main() {
     println(" MiB free\n");
     print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
 
-    cmd_atapi_init();
-    cmd_fat_init();
+    cmd_atapi_init(ArgumentObject(NULL, nullptr));
+    cmd_fat_init(ArgumentObject(NULL, nullptr));
 
-    // Commands commands;
-    // commands.registerCommands();
+    commands.registerCommands();
 
     //testingCsh();
 

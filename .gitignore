@@ -8,3 +8,8 @@
 /targets/x86_64/disk.img
 
 *.zip
+
+targets/x86_64/iso/boot/kernel_kernelpanic.bin
+targets/x86_64/iso/boot/kernel_production.bin
+targets/x86_64/iso/boot/kernel_testing.bin
+targets/x86_64/iso/boot/kernel.bin

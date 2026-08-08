@@ -1,3 +1,10 @@
+1.4:
+    - Made the commands.cpp/commands.hpp command builder system work
+        - With that made the command functions be c++ EXCEPT FOR FILESYSTEM SPECIFIC FUNCTIONS
+        - Commands cause KERNELPANIC when no function to execute is defined
+    - Reverted the TESTING environment to its Default state
+    - Moved KERNEL.h -> krnl.h/krnl.c - libs
+
 1.3:
     - Added memory allocation functions for the cpp heap and for allocating memory in general
     - Added memory display for TESTING and PRODUCTION build at boot
