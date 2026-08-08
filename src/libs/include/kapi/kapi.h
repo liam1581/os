@@ -10,8 +10,8 @@ typedef struct {
     // Print functions
     void (*clear_screen)();
     void (*printc)(char character);
-    void (*print)(char* string);
-    void (*println)(char* string);
+    void (*print)(const char* string);
+    void (*println)(const char* string);
     void (*printf)(char* fmt, ...);
     void (*print_set_color)(uint8_t foreground, uint8_t background);
     void (*print_uint64_dec)(uint64_t value);

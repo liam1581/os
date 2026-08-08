@@ -22,7 +22,10 @@ void cpp_main() {
     print_uint64_dec(pmm_free_memory_bytes() / 1024 / 1024);
     print(" / ");
     print_uint64_dec(pmm_total_memory_bytes() / 1024 / 1024);
-    println(" MiB free\n");
+    println(" MiB free");
+    print("        ");
+    print_uint64_dec((pmm_total_memory_bytes() - pmm_free_memory_bytes()) / 1024 / 1024);
+    println(" MiB used\n");
     print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
 
     cmd_atapi_init(ArgumentObject(NULL, nullptr));

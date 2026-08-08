@@ -1,3 +1,10 @@
+1.5:
+    - Ported the last command functions (originally in C_command_functions) to the new system
+        - Fixed buggy FAT32 commands with this
+    - Fixed kapi to take const char* instead of char* for print/println functions
+    - Changed the memory display at boot to display how many MiB are used underneath the free space
+    - Copied hw.lhe to the FAT32 disk for future addition of fat32 run command
+
 1.4:
     - Made the commands.cpp/commands.hpp command builder system work
         - With that made the command functions be c++ EXCEPT FOR FILESYSTEM SPECIFIC FUNCTIONS
