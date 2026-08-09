@@ -1,6 +1,7 @@
 CC := x86_64-elf-gcc
 CXX := x86_64-elf-g++
 LD := x86_64-elf-ld
+OBJCP := x86_64-elf-objcopy
 
 FAT_DISK_SIZE := 1024
 
@@ -191,7 +192,7 @@ targets/x86_64/iso/programs/%.lhe: src/programs/%.c
 	$(call step,$(YELLOW)$(BOLD)LSE $(RESET),$(STEM).c)
 	@$(CC) $(DEFINES) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/programs/%.lhe, src/programs/%.c, $@) -o build/programs/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/$(STEM).elf build/programs/$(STEM).o
-	@x86_64-elf-objcopy -O binary build/programs/$(STEM).elf build/programs/$(STEM).bin
+	@$(OBJCP) -O binary build/programs/$(STEM).elf build/programs/$(STEM).bin
 	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x46,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
 	@cat build/programs/$(STEM).bin >> $@
 
