@@ -11,16 +11,17 @@ FAT_DISK_SIZE := 1024
 # ============================================================================
 VARIANTS := testing production kernelpanic
 
-DEFINES_testing     := -DKEYBOARD_QWERTZ -DDEBUG -DTESTING
-DEFINES_production  := -DKEYBOARD_QWERTZ -DDEBUG -DPRODUCTION
-DEFINES_kernelpanic := -DKEYBOARD_QWERTZ -DDEBUG -DKERNELPANIC
+# -DKEYBOARD_ VARIANTS: GERMAN // EN_US
+DEFINES_testing     := -DKEYBOARD_GERMAN -DDEBUG -DTESTING
+DEFINES_production  := -DKEYBOARD_GERMAN -DDEBUG -DPRODUCTION
+DEFINES_kernelpanic := -DKEYBOARD_GERMAN -DDEBUG -DKERNELPANIC
 
 # Which variant's kernel.bin gets packaged into the ISO / used by `make run`
 ISO_VARIANT := testing
 
 # DEFINES used for building the userspace programs (.lhe files). These are
 # not kernel-variant specific, so a single fixed set is used.
-DEFINES := -DKEYBOARD_QWERTZ -DDEBUG -DPRODUCTION
+DEFINES := -DKEYBOARD_GERMAN -DDEBUG -DPRODUCTION
 
 kernel_c_source_files := $(shell find src/kernel -name *.c)
 kernel_cpp_source_files := $(shell find src/kernel -name *.cpp)
@@ -36,10 +37,10 @@ libs_cpp_source_files := $(shell find src/libs/src -name *.cpp)
 libs_asm_source_files := $(shell find src/libs/src -name *.asm)
 
 program_asm_source_files := $(shell find src/programs -name *.asm)
-program_lse_files := $(patsubst src/programs/%.asm, targets/x86_64/iso/data/%.lhe, $(program_asm_source_files))
+program_lse_files := $(patsubst src/programs/%.asm, targets/x86_64/iso/programs/%.lhe, $(program_asm_source_files))
 
 program_c_source_files := $(shell find src/programs -name *.c)
-program_c_lse_files := $(patsubst src/programs/%.c, targets/x86_64/iso/data/%.lhe, $(program_c_source_files))
+program_c_lse_files := $(patsubst src/programs/%.c, targets/x86_64/iso/programs/%.lhe, $(program_c_source_files))
 
 INCLUDES := -I src/libs/include -I src/libs/include/kapi -I src/kernel/include -I src/kernel/cpp/include -I src/csh/include -I src/kernel/TESTING/include
 
@@ -174,7 +175,7 @@ $(foreach v,$(VARIANTS),$(eval $(call COMPILE_RULES,$(v))))
 # ----------------------------------------------------------------------------
 #  Program (.lhe) rules — shared across all kernel variants
 # ----------------------------------------------------------------------------
-targets/x86_64/iso/data/%.lhe: src/programs/%.asm
+targets/x86_64/iso/programs/%.lhe: src/programs/%.asm
 	@mkdir -p $(dir $@)
 	@mkdir -p build/programs
 	$(eval STEM := $*)
@@ -183,12 +184,12 @@ targets/x86_64/iso/data/%.lhe: src/programs/%.asm
 	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x46,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
 	@cat build/programs/$(STEM).bin >> $@
 
-targets/x86_64/iso/data/%.lhe: src/programs/%.c
+targets/x86_64/iso/programs/%.lhe: src/programs/%.c
 	@mkdir -p $(dir $@)
 	@mkdir -p build/programs
 	$(eval STEM := $*)
 	$(call step,$(YELLOW)$(BOLD)LSE $(RESET),$(STEM).c)
-	@$(CC) $(DEFINES) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/data/%.lhe, src/programs/%.c, $@) -o build/programs/$(STEM).o
+	@$(CC) $(DEFINES) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/programs/%.lhe, src/programs/%.c, $@) -o build/programs/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/$(STEM).elf build/programs/$(STEM).o
 	@x86_64-elf-objcopy -O binary build/programs/$(STEM).elf build/programs/$(STEM).bin
 	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x46,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
@@ -226,7 +227,7 @@ clean_all:
 	@printf "$(YELLOW)$(BOLD)[clean_all]$(RESET) removing ALL build artifacts...\n"
 	@rm -rf targets/x86_64/disk.img
 	@rm -rf build dist
-	@rm -rf targets/x86_64/iso/data/*.lhe targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
+	@rm -rf targets/x86_64/iso/programs/*.lhe targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
 	@printf "$(GREEN)Clean complete$(RESET)\n"
 
 build_clean:

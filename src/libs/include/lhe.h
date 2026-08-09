@@ -21,3 +21,4 @@
 #define LHE_MAGIC_F        0xFF
 
 int lhe_exec(const char* path);
+int lhe_exec_from(const char* path, bool useFat);

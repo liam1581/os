@@ -54,11 +54,14 @@ static bool lhe_check_header(const uint8_t* header) {
            header[15] == LHE_MAGIC_F;
 }
 
-int lhe_exec(const char* path) {
+int lhe_exec_from(const char* path, bool useFAT) {
     uint8_t* load_addr = (uint8_t*)LHE_LOAD_ADDRESS;
 
     uint32_t file_size;
-    if (!iso9660_read_file(path, load_addr, &file_size)) return -1;
+    bool read_ok = useFAT
+        ? fat32_read_file(path, load_addr, &file_size)
+        : iso9660_read_file(path, load_addr, &file_size);
+    if (!read_ok) return -1;
 
     // Validate header
     if (file_size <= LHE_HEADER_SIZE)  return -2;
@@ -101,7 +104,6 @@ int lhe_exec(const char* path) {
     kapi.keyboard_set_handler = keyboard_set_handler;
     kapi.keyboard_is_down = keyboard_is_down;
     kapi.keyboard_is_up = keyboard_is_up;
-    kapi.keycode_to_ascii = keycode_to_ascii;
     kapi.keycode_to_ascii_ext = keycode_to_ascii_ext;
     kapi.rtc_seconds = rtc_seconds;
     kapi.port_inb = port_inb;
@@ -140,4 +142,8 @@ int lhe_exec(const char* path) {
     program_main(&kapi);
 
     return 1;
+}
+
+int lhe_exec(const char* path) {
+    return lhe_exec_from(path, false);
 }

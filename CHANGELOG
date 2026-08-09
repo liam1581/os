@@ -1,3 +1,13 @@
+1.6:
+    - Made the filesystem specific commands work on iso9660 and fat32 (D: for the iso9660 drive and C: for the fat drive)
+    - Fixed the C++ compile warning " '__dso_handle' initialized and declared 'extern'"
+    - Fixed Linking warnings:
+        -  warning: build/programs/hw.elf has a LOAD segment with RWX permissions
+        -  warning: dist/x86_64/kernel_testing.bin has a LOAD segment with RWX permissions
+        -  warning: dist/x86_64/kernel_production.bin has a LOAD segment with RWX permissions
+        -  warning: dist/x86_64/kernel_kernelpanic.bin has a LOAD segment with RWX permissions
+    - Made the programs compile to "D:/programs"
+
 1.5:
     - Ported the last command functions (originally in C_command_functions) to the new system
         - Fixed buggy FAT32 commands with this

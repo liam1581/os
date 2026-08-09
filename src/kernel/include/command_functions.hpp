@@ -15,9 +15,8 @@ int cmd_cat(ArgumentObject args);
 int cmd_run(ArgumentObject args);
 int cmd_cd(ArgumentObject args);
 int cmd_fat_init(ArgumentObject);
-int cmd_fat_ls(ArgumentObject);
-int cmd_fat_cat(ArgumentObject args);
-
 
 char* get_current_dir();
 char* get_fat_current_dir();
+char get_current_drive();
+char* get_current_path();

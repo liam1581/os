@@ -13,6 +13,12 @@ bool cmdMode = true;
 
 extern Commands commands;
 
+void print_shell_prefix() {
+    printc(get_current_drive());
+    print(":");
+    print(get_current_path());
+}
+
 size_t keyboard_buffer_length = 0;
 size_t keyboard_buffer_index = 0;
 char keyboard_buffer[1024];
@@ -65,8 +71,7 @@ void handle_input(struct KeyboardEvent event) {
             if (cmdMode) {
                 commands.handleCommand(keyboard_buffer);
 
-                print("D:");
-                print(get_current_dir());
+                print_shell_prefix();
                 print("> ");
                 keyboard_buffer_clear();
             }

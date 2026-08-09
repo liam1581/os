@@ -26,8 +26,8 @@ extern "C" void kernel_testing() {
 
     print("> ");
 
-    keyboard_init();
-    keyboard_set_handler(testing_handle_input);
+    //keyboard_init();
+    //keyboard_set_handler(testing_handle_input);
 
     while (1);
 }

@@ -4,5 +4,11 @@ Planned for future versions:
     make the SeaShell (csh) work
     add a Picture Rendering mode (uncompressed images)
         - maybe png/jpg images at some point too
-    
-    (SOON) changing fs commands to work on iso9660 (D:) and fat32 (C:)
+
+    (SOON) make programs on C and D drive (C and D directory in src/programs)
+    (SOON) make more FAT32 commands:
+            - cre.file (create file) "name"
+            - cre.dir (create directory) "dir"
+            - cp "src" "dest"
+            - mv "src" "dest"
+            - rm/del "file"

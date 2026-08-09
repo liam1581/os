@@ -36,8 +36,9 @@ void cpp_main() {
     //testingCsh();
 
     print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-    print("D:");
-    print(get_current_dir());
+    printc(get_current_drive());
+    print(":");
+    print(get_current_path());
     print("> ");
 
     keyboard_init();

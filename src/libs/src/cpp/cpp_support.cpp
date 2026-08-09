@@ -28,7 +28,9 @@ extern "C" void __cxa_pure_virtual() {
     while (1) { asm volatile("hlt"); }
 }
 
-extern "C" void* __dso_handle = nullptr;
+extern "C" {
+    void* __dso_handle = nullptr;
+};
 extern "C" int __cxa_atexit(void (*)(void*), void*, void*) {
     return 0;
 }

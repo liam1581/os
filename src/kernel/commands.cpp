@@ -392,13 +392,6 @@ void Commands::registerCommands() {
     
     add("fat.init", 0);
     executes("fat.init", cmd_fat_init);
-    
-    add("fat.ls", 0);
-    executes("fat.ls", cmd_fat_ls);
-
-    add("fat.cat", 1);
-    argument<const char*>("fat.cat", "file");
-    executes("fat.cat", cmd_fat_cat);
 
     add("TESTING", 0);
 }

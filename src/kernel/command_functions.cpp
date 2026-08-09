@@ -24,6 +24,30 @@ char FATcurrent_dir[1024] = "/";
 bool cdInitialized = false;
 bool fatInitialized = false;
 
+char currentDrive = 'D';
+
+void print_not_initialized(const char* command, char drive) {
+    print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+    print(command);
+    if (drive == 'C') {
+        println(": FAT drive (C:) not initialized. Run 'fat.init' first.");
+    } else {
+        println(": CD drive (D:) not initialized. Run 'cd.init' first.");
+    }
+    print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+}
+
+static bool names_match(const char* entryName, const char* filename) {
+    for (size_t j = 0; ; j++) {
+        char a = entryName[j];
+        char b = filename[j];
+        if (a >= 'A' && a <= 'Z') a += 32;
+        if (b >= 'A' && b <= 'Z') b += 32;
+        if (a != b) return false;
+        if (a == '\0') return true;
+    }
+}
+
 int cmd_echo(ArgumentObject args) {
     const char* message = args.getArgument("message");
 
@@ -158,10 +182,36 @@ int cmd_atapi_init(ArgumentObject) {
 }
 
 int cmd_ls(ArgumentObject) {
+    if (currentDrive == 'C') {
+        if (!fatInitialized) {
+            print_not_initialized("ls", 'C');
+            return 1;
+        }
+
+        struct FAT32Dir dir;
+        if (fat32_list_dir(FATcurrent_dir, &dir)) {
+            for (uint32_t i = 0; i < dir.count; i++) {
+                if (dir.entries[i].is_directory) {
+                    print_set_color(PRINT_COLOR_CYAN, PRINT_COLOR_BLACK);
+                    print("[DIR] ");
+                    println(dir.entries[i].name);
+                    print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+                } else {
+                    println(dir.entries[i].name);
+                }
+            }
+        } else {
+            print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+            println("ls: directory not found!");
+            print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+            return 1;
+        }
+
+        return 0;
+    }
+
     if (!cdInitialized) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("ls: CD drive not initialized. Run 'cd.init' first.");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        print_not_initialized("ls", 'D');
         return 1;
     }
 
@@ -189,13 +239,6 @@ int cmd_ls(ArgumentObject) {
 }
 
 int cmd_cat(ArgumentObject args) {
-    if (!cdInitialized) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("cat: CD drive not initialized. Run 'cd.init' first.");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
-
     ArgumentValue fileArg = args.getArgument("file");
     if (!fileArg.isValid()) {
         print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
@@ -205,6 +248,49 @@ int cmd_cat(ArgumentObject args) {
     }
     const char* relative_filename = fileArg;
 
+    if (currentDrive == 'C') {
+        if (!fatInitialized) {
+            print_not_initialized("cat", 'C');
+            return 1;
+        }
+
+        char filename[2048];
+        strcat_s(filename, FATcurrent_dir, relative_filename);
+
+        struct FAT32Dir dir;
+        if (fat32_list_dir(FATcurrent_dir, &dir)) {
+            for (uint32_t i = 0; i < dir.count; i++) {
+                if (names_match(dir.entries[i].name, relative_filename) && dir.entries[i].is_directory) {
+                    print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+                    println("cat: cannot cat a directory");
+                    print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+                    return 1;
+                }
+            }
+        }
+
+        uint8_t file_buf[4096];
+        uint32_t file_size;
+        if (fat32_read_file(filename, file_buf, &file_size)) {
+            for (uint32_t i = 0; i < file_size; i++) {
+                printc((char)file_buf[i]);
+            }
+            printc('\n');
+        } else {
+            print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+            println("cat: file not found!");
+            print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+            return 1;
+        }
+
+        return 0;
+    }
+
+    if (!cdInitialized) {
+        print_not_initialized("cat", 'D');
+        return 1;
+    }
+
     char filename[2048];
     strcat_s(filename, current_dir, relative_filename);
 
@@ -212,17 +298,7 @@ int cmd_cat(ArgumentObject args) {
     struct ISO9660Dir dir;
     if (iso9660_list_dir(current_dir, &dir)) {
         for (uint32_t i = 0; i < dir.count; i++) {
-            // compare name ignoring case
-            bool match = true;
-            for (size_t j = 0; ; j++) {
-                char a = dir.entries[i].name[j];
-                char b = relative_filename[j];
-                if (a >= 'A' && a <= 'Z') a += 32;
-                if (b >= 'A' && b <= 'Z') b += 32;
-                if (a != b) { match = false; break; }
-                if (a == '\0') break;
-            }
-            if (match && dir.entries[i].is_directory) {
+            if (names_match(dir.entries[i].name, relative_filename) && dir.entries[i].is_directory) {
                 print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
                 println("cat: cannot cat a directory");
                 print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
@@ -250,13 +326,6 @@ int cmd_cat(ArgumentObject args) {
 }
 
 int cmd_run(ArgumentObject args) {
-    if (!cdInitialized) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("run: CD drive not initialized. Run 'cd.init' first.");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
-
     ArgumentValue fileArg = args.getArgument("file");
     if (!fileArg.isValid()) {
         print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
@@ -266,10 +335,21 @@ int cmd_run(ArgumentObject args) {
     }
     const char* relative_filename = fileArg;
 
-    char path[2048];
-    strcat_s(path, current_dir, relative_filename);
+    bool useFat = (currentDrive == 'C');
 
-    int exec = lhe_exec(path);
+    if (useFat && !fatInitialized) {
+        print_not_initialized("run", 'C');
+        return 1;
+    }
+    if (!useFat && !cdInitialized) {
+        print_not_initialized("run", 'D');
+        return 1;
+    }
+
+    char path[2048];
+    strcat_s(path, useFat ? FATcurrent_dir : current_dir, relative_filename);
+
+    int exec = lhe_exec_from(path, useFat);
 
     if (exec != 1) {
         print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
@@ -294,74 +374,92 @@ int cmd_run(ArgumentObject args) {
 }
 
 int cmd_cd(ArgumentObject args) {
-    if (!cdInitialized) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("cd: CD drive not initialized. Run 'cd.init' first.");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
-
     ArgumentValue dirArg = args.getArgument("directory");
     const char* target = dirArg.isValid() ? (const char*)dirArg : "";
 
-    // No directory given (or explicitly "") goes to root
-    if (target[0] == '\0') {
-        current_dir[0] = '/';
-        current_dir[1] = '\0';
-        return 0;
+    // Detect an explicit drive prefix, e.g. "D:/data/someDirectory" or
+    // "C:/someDir1/someDir2". Anything after the prefix is treated as an
+    // absolute path on that drive.
+    char requestedDrive = currentDrive;
+    const char* path = target;
+    bool explicitDrive = false;
+
+    if ((target[0] == 'D' || target[0] == 'd' || target[0] == 'C' || target[0] == 'c') && target[1] == ':') {
+        requestedDrive = (target[0] == 'D' || target[0] == 'd') ? 'D' : 'C';
+        path = target + 2;
+        explicitDrive = true;
     }
 
+    if (requestedDrive == 'C' && !fatInitialized) {
+        print_not_initialized("cd", 'C');
+        return 1;
+    }
+    if (requestedDrive == 'D' && !cdInitialized) {
+        print_not_initialized("cd", 'D');
+        return 1;
+    }
+
+    char* baseDir = (requestedDrive == 'C') ? FATcurrent_dir : current_dir;
     char new_dir[1024];
 
-    if (target[0] == '/') {
-        // Absolute path -- use as-is
+    if (path[0] == '\0') {
+        // Nothing after the drive letter (or no argument at all) -> root
+        new_dir[0] = '/';
+        new_dir[1] = '\0';
+    } else if (explicitDrive || path[0] == '/') {
+        // Absolute path. An explicit drive prefix is always absolute on
+        // that drive, matching the "D:/data/foo" style.
         size_t i = 0;
-        while (target[i] != '\0' && i < sizeof(new_dir) - 2) {
-            new_dir[i] = target[i];
+        size_t o = 0;
+        if (path[0] != '/') { new_dir[0] = '/'; o = 1; }
+        while (path[i] != '\0' && i + o < sizeof(new_dir) - 2) {
+            new_dir[i + o] = path[i];
             i++;
         }
-        // Ensure trailing slash
-        if (new_dir[i - 1] != '/') {
-            new_dir[i++] = '/';
-        }
-        new_dir[i] = '\0';
-    } else if (target[0] == '.' && target[1] == '.' && (target[2] == '\0' || target[2] == '/')) {
-        // Go up one directory
-        if (current_dir[0] == '/' && current_dir[1] == '\0') {
-            // Already at root, do nothing
-            return 0;
+        size_t total = i + o;
+        if (total == 0 || new_dir[total - 1] != '/') new_dir[total++] = '/';
+        new_dir[total] = '\0';
+    } else if (path[0] == '.' && path[1] == '.' && (path[2] == '\0' || path[2] == '/')) {
+        // Go up one directory within the target drive's current directory
+        if (baseDir[0] == '/' && baseDir[1] == '\0') {
+            return 0; // already at root, nothing to do
         }
 
-        // Copy current_dir and strip trailing slash
         size_t len = 0;
-        while (current_dir[len]) len++;
-        if (len > 1 && current_dir[len - 1] == '/') len--;
+        while (baseDir[len]) len++;
+        if (len > 1 && baseDir[len - 1] == '/') len--;
 
-        // Find the previous slash
         size_t i = len;
-        while (i > 0 && current_dir[i - 1] != '/') i--;
+        while (i > 0 && baseDir[i - 1] != '/') i--;
 
-        // Copy everything up to and including that slash
-        for (size_t j = 0; j < i; j++) new_dir[j] = current_dir[j];
+        for (size_t j = 0; j < i; j++) new_dir[j] = baseDir[j];
         if (i == 0) { new_dir[0] = '/'; new_dir[1] = '\0'; }
         else new_dir[i] = '\0';
     } else {
-        // Relative path -- append to current_dir
-        strcat_s(new_dir, current_dir, target);
+        // Relative path -- append to the target drive's current directory
+        strcat_s(new_dir, baseDir, path);
         size_t len = 0;
         while (new_dir[len]) len++;
-        // Ensure trailing slash
         if (new_dir[len - 1] != '/') {
             new_dir[len]     = '/';
             new_dir[len + 1] = '\0';
         }
     }
 
-    // Verify the directory actually exists on the ISO
-    struct ISO9660Dir dir;
-    if (!iso9660_list_dir(new_dir, &dir)) {
+    // Verify the directory actually exists on the target drive
+    bool exists;
+    if (requestedDrive == 'C') {
+        struct FAT32Dir dir;
+        exists = fat32_list_dir(new_dir, &dir);
+    } else {
+        struct ISO9660Dir dir;
+        exists = iso9660_list_dir(new_dir, &dir);
+    }
+
+    if (!exists) {
         print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
         print("cd: directory not found: ");
+        print(requestedDrive == 'C' ? "C:" : "D:");
         println(new_dir);
         print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
         return 1;
@@ -369,68 +467,10 @@ int cmd_cd(ArgumentObject args) {
 
     // Commit
     size_t i = 0;
-    while (new_dir[i]) { current_dir[i] = new_dir[i]; i++; }
-    current_dir[i] = '\0';
+    while (new_dir[i]) { baseDir[i] = new_dir[i]; i++; }
+    baseDir[i] = '\0';
 
-    return 0;
-}
-
-int cmd_fat_cat(ArgumentObject args) {
-    if (!fatInitialized) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("fat.cat: Drive not initialized. Run 'fat.init' first.");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
-
-    ArgumentValue fileArg = args.getArgument("file");
-    if (!fileArg.isValid()) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("fat.cat: missing file argument");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
-    const char* relative_filename = fileArg;
-
-    char filename[2048];
-    strcat_s(filename, FATcurrent_dir, relative_filename);
-
-    // Check if it's a directory by looking it up in the current dir listing
-    struct FAT32Dir dir;
-    if (fat32_list_dir(FATcurrent_dir, &dir)) {
-        for (uint32_t i = 0; i < dir.count; i++) {
-            // compare name ignoring case
-            bool match = true;
-            for (size_t j = 0; ; j++) {
-                char a = dir.entries[i].name[j];
-                char b = relative_filename[j];
-                if (a >= 'A' && a <= 'Z') a += 32;
-                if (b >= 'A' && b <= 'Z') b += 32;
-                if (a != b) { match = false; break; }
-                if (a == '\0') break;
-            }
-            if (match && dir.entries[i].is_directory) {
-                print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-                println("fat.cat: cannot cat a directory");
-                print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-                return 1;
-            }
-        }
-    }
-
-    uint8_t file_buf[4096];
-    uint32_t file_size;
-    if (fat32_read_file(filename, file_buf, &file_size)) {
-        for (uint32_t i = 0; i < file_size; i++) {
-            printc((char)file_buf[i]);
-        }
-        printc('\n');
-    } else {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("fat.cat: file not found!");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
+    currentDrive = requestedDrive;
 
     return 0;
 }
@@ -460,40 +500,15 @@ int cmd_fat_init(ArgumentObject) {
     return 0;
 }
 
-int cmd_fat_ls(ArgumentObject) {
-    if (!fatInitialized) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("fat.ls: Drive not initialized. Run 'fat.init' first.");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
-
-    struct FAT32Dir dir;
-    if (fat32_list_dir(FATcurrent_dir, &dir)) {
-        for (uint32_t i = 0; i < dir.count; i++) {
-            if (dir.entries[i].is_directory) {
-                print_set_color(PRINT_COLOR_CYAN, PRINT_COLOR_BLACK);
-                print("[DIR] ");
-                println(dir.entries[i].name);
-                print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-            } else {
-                println(dir.entries[i].name);
-            }
-        }
-    } else {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("fat.ls: directory not found!");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-
-        return 1;
-    }
-
-    return 0;
-}
-
 char* get_current_dir() {
     return current_dir;
 }
 char* get_fat_current_dir() {
     return FATcurrent_dir;
+}
+char get_current_drive() {
+    return currentDrive;
+}
+char* get_current_path() {
+    return currentDrive == 'C' ? FATcurrent_dir : current_dir;
 }
