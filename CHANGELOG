@@ -1,3 +1,6 @@
+1.7:
+    - Made UP_ARROW key display the last command
+
 1.6:
     - Made the filesystem specific commands work on iso9660 and fat32 (D: for the iso9660 drive and C: for the fat drive)
     - Fixed the C++ compile warning " '__dso_handle' initialized and declared 'extern'"

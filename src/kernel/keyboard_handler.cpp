@@ -23,11 +23,37 @@ size_t keyboard_buffer_length = 0;
 size_t keyboard_buffer_index = 0;
 char keyboard_buffer[1024];
 
+char lastCommand[1024];
+size_t lastCommandLength = 0;
+
 void keyboard_buffer_clear() {
     keyboard_buffer_length = 0;
     keyboard_buffer_index = 0;
     for (size_t i = 0; i < 1024; i++) keyboard_buffer[i] = '\0';
 }
+
+void show_last_command() {
+    if (lastCommandLength == 0) return;
+
+    // Move the screen cursor to the end of the current line...
+    for (size_t i = keyboard_buffer_index; i < keyboard_buffer_length; i++) {
+        move_cursor_right();
+    }
+    // ...then erase it, character by character.
+    for (size_t i = 0; i < keyboard_buffer_length; i++) {
+        delete_last_char();
+    }
+
+    // Load the last command into the buffer and echo it back out.
+    for (size_t i = 0; i < lastCommandLength; i++) {
+        keyboard_buffer[i] = lastCommand[i];
+        printc(lastCommand[i]);
+    }
+    keyboard_buffer[lastCommandLength] = '\0';
+    keyboard_buffer_length = lastCommandLength;
+    keyboard_buffer_index = lastCommandLength;
+}
+
 
 void handle_input(struct KeyboardEvent event) {
     if (event.type == KEYBOARD_EVENT_TYPE_MAKE) {
@@ -47,6 +73,9 @@ void handle_input(struct KeyboardEvent event) {
             keyboard_buffer_index--;
 
             delete_last_char();
+            return;
+        }  else if (cmdMode && event.code == KEY_CODE_ARROW_KEY_UP) {
+            show_last_command();
             return;
         } else if (!cmdMode && event.code == KEY_CODE_ARROW_KEY_UP) {
             move_cursor_up();
@@ -69,6 +98,14 @@ void handle_input(struct KeyboardEvent event) {
             printc('\n');
 
             if (cmdMode) {
+                if (keyboard_buffer_length > 0) {
+                    for (size_t i = 0; i < keyboard_buffer_length; i++) {
+                        lastCommand[i] = keyboard_buffer[i];
+                    }
+                    lastCommand[keyboard_buffer_length] = '\0';
+                    lastCommandLength = keyboard_buffer_length;
+                }
+                
                 commands.handleCommand(keyboard_buffer);
 
                 print_shell_prefix();

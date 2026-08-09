@@ -1,1 +1,1 @@
-CustomOS version 1.6
+CustomOS version 1.7
