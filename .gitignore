@@ -3,9 +3,12 @@
 /dist/*
 !/dist/x86_64/
 /dist/x86_64/*
-!/dist/x86_64/kernel.iso
+!/dist/x86_64/kernel_*.iso
 
 /targets/x86_64/disk.img
+
+vault
+bn
 
 *.zip
 

@@ -5,6 +5,20 @@ OBJCP := x86_64-elf-objcopy
 
 FAT_DISK_SIZE := 1024
 
+
+TZ   := Europe/Berlin
+DD   := $(shell TZ=$(TZ) date +%d)
+MM   := $(shell TZ=$(TZ) date +%m)
+YYYY := $(shell TZ=$(TZ) date +%Y)
+HH   := $(shell TZ=$(TZ) date +%H)
+MIN  := $(shell TZ=$(TZ) date +%M)
+
+MJ := 2
+MN := 0
+BN := $(shell cat bn)
+
+VERSION := $(DD)$(MM)$(YYYY).$(HH)$(MIN)-$(MJ).$(MN)-$(BN)
+
 # ============================================================================
 #  Build variants
 #  Each variant only differs in which single DEFINES flag is appended to the
@@ -199,9 +213,10 @@ targets/x86_64/iso/programs/%.lhe: src/programs/%.c
 .PHONY: build clean clean_all run build_clean stepinit
 
 stepinit:
+	@mkdir -p vault
 	@mkdir -p build
 	@rm -f $(STEP_FILE)
-	@printf "$(BOLD)$(BLUE)[+] Building$(RESET) $(DIM)myos ($(TOTAL_STEPS) steps, $(words $(VARIANTS)) variants)$(RESET)\n"
+	@printf "$(BOLD)$(BLUE)[+] Building$(RESET) $(DIM)myos version $(VERSION)($(TOTAL_STEPS) steps, $(words $(VARIANTS)) variants)$(RESET)\n"
 
 # Default build: produces all three kernel.bin files, copies each into
 # targets/x86_64/iso/boot/ (as kernel_<variant>.bin) so grub.cfg can offer a
@@ -210,13 +225,15 @@ build: stepinit $(program_c_lse_files) $(program_lse_files) $(foreach v,$(VARIAN
 	@mkdir -p targets/x86_64/iso/boot
 	@$(foreach v,$(VARIANTS),cp dist/x86_64/kernel_$(v).bin targets/x86_64/iso/boot/kernel_$(v).bin;)
 	@cp dist/x86_64/kernel_$(ISO_VARIANT).bin targets/x86_64/iso/boot/kernel.bin
-	@printf "$(DIM)[  --]$(RESET) $(MAGENTA)$(BOLD) ISO$(RESET) $(DIM)dist/x86_64/kernel.iso$(RESET)\n"
-	@grub-mkrescue /usr/lib/grub/i386-pc -o dist/x86_64/kernel.iso targets/x86_64/iso > /dev/null 2>&1
+	@printf "$(DIM)[  --]$(RESET) $(MAGENTA)$(BOLD) ISO$(RESET) $(DIM)dist/x86_64/kernel_$(VERSION).iso$(RESET)\n"
+	@grub-mkrescue /usr/lib/grub/i386-pc -o dist/x86_64/kernel_$(VERSION).iso targets/x86_64/iso > /dev/null 2>&1
+	@cp dist/x86_64/kernel_$(VERSION).iso vault/
+	@next=$$(($(BN) + 1)); echo $$next > bn;
 	@rm -f $(STEP_FILE)
 	@printf "$(GREEN)$(BOLD)Build complete$(RESET)\n"
 	@$(foreach v,$(VARIANTS),printf "  $(DIM)→ dist/x86_64/kernel_$(v).bin$(RESET)\n";)
 	@$(foreach v,$(VARIANTS),printf "  $(DIM)→ targets/x86_64/iso/boot/kernel_$(v).bin$(RESET)\n";)
-	@printf "  $(DIM)→ dist/x86_64/kernel.iso$(RESET) (default boot: $(ISO_VARIANT))\n"
+	@printf "  $(DIM)→ dist/x86_64/kernel_$(VERSION).iso$(RESET) (default boot: $(ISO_VARIANT))\n"
 
 clean:
 	@printf "$(YELLOW)$(BOLD)[clean]$(RESET) removing build artifacts...\n"
@@ -252,7 +269,7 @@ run:
 	@printf "$(GREEN)$(BOLD)[run]$(RESET) starting QEMU...\n"
 	@qemu-system-x86_64 \
 		-drive file=targets/x86_64/disk.img,format=raw,if=ide,index=0,media=disk \
-		-drive file=dist/x86_64/kernel.iso,format=raw,if=ide,index=2,media=cdrom \
+		-drive file=dist/x86_64/kernel_$(VERSION).iso,format=raw,if=ide,index=2,media=cdrom \
 		-m 12G \
 		-boot d \
 		-serial tcp:127.0.0.1:1234,server &

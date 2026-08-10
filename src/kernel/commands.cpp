@@ -420,7 +420,24 @@ void Commands::registerCommands() {
     add("del", 1);
     argument<const char*>("del", "file");
     executes("del", cmd_rm);
-    
+
+    helpMessage("echo", " \"message\" - Prints a message!");
+    helpMessage("cls", " - Clears the screen");
+    helpMessage("reboot", " - Restart the Computer");
+    helpMessage("shutdown", " - Shut down the VM (NO ACPI YET)");
+    helpMessage("serial.init", " \"baudrate\" - Init serial port with the baudrate specified");
+    helpMessage("serial.write", " \"message\" - Writes a message to the serial port");
+    helpMessage("cd.init", " - Initializes the cd driver");
+    helpMessage("fat.init", " - Initializes the FAT32 driver");
+    helpMessage("ls", " - Does a directory listing");
+    helpMessage("cat", " \"file\" - Prints out the file's content");
+    helpMessage("run", " \"file\" - Runs a LHE file");
+    helpMessage("cd", " \"directory\" - Changes directorys");
+    helpMessage("cre.file", " \"file\" - Creates a file (C: drive only)");
+    helpMessage("cre.dir", " \"directory\" - Creates a directory (C: drive only)");
+    helpMessage("cp", " \"src\" \"destination\" - Copies a file (C: drive only)");
+    helpMessage("mv", " \"src\" \"destination\" - Moves/renames a file (C: drive only)");
+    helpMessage("rm", "/del \"file\" - Deletes a file (C: drive only)");
 
     add("TESTING", 0);
 }

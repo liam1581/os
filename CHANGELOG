@@ -1,3 +1,6 @@
+2.0:
+    - Added functionality for Commands::addHelp();
+
 1.8:
     - Added more fat32 specific commands (C drive) [EVERY COMMAND EXCEPT rm/del CRASH THE OS CURRENTLY, IM WORKING ON FIXING THAT]
         - cre.file (create file) "name"
@@ -11,6 +14,7 @@
     - Fixed a bug that caused a stack overflow in FAT32 driver
     - Added version_naming_scheme.txt describing the future naming scheme for versions!
         - Version 1.8 is the last version using the normal Major.Minor naming scheme!
+        - Future versions will be added here as Major.Minor but theire files are named differently!
 
 1.7:
     - Made UP_ARROW key display the last command

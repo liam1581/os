@@ -1,11 +1,11 @@
-DDMMYYYY.HHMM-MJVN.MNVN-BN
+DDMMYYYY.HHMIN-MJVN.MNVN-BN
 
 (CET)
 DD: Day
 MM: Month
 YYYY: Year
 HH: Hour
-MM: Minutes
+MIN: Minutes
 
 MJVN: Major Versin Number
 MNVN: Minor Version Number
