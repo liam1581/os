@@ -439,6 +439,7 @@ void Commands::registerCommands() {
     helpMessage("cp", " \"src\" \"destination\" - Copies a file (C: drive only)");
     helpMessage("mv", " \"src\" \"destination\" - Moves/renames a file (C: drive only)");
     helpMessage("rm", "/del \"file\" - Deletes a file (C: drive only)");
+    helpMessage("TESTING", " - Causes kernel panic because no function is defined");
 
     add("TESTING", 0);
 }

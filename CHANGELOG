@@ -1,3 +1,6 @@
+2.2:
+    - Added help message for TESTING command
+
 2.1:
     - Changed version_naming_scheme to include Tx versions
     - Made buildInfo directory for major and minor version number aswell as build number
