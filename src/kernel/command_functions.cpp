@@ -68,45 +68,45 @@ int cmd_echo(ArgumentObject args) {
     return 0;
 }
 
-int cmd_help(ArgumentObject) {
-    println("Available commands:");
-    // println("  help - Show this message");
-    // println("  echo \"message\" - Print a message");
-    // println("  cls - Clear the screen");
-    // println("  reboot - Restart the computer");
-    // println("  shutdown - Shut down the computer (QEMU & VIRTUALBOX ONLY, NO ACPI)");
-    // println("  serial.init \"baudrate\" - Init serial port with the baudrate");
-    // println("  serial.write \"message\" - Write a message to the serial port");
-    // println("  serial.kill - Close the serial port connection");
-    // println("  cd.init - Initializes the CD Driver (automatically on boot)");
-    // println("  ls - Does a directory listing");
-    // println("  cat \"file\" - Prints the file's content");
-    // println("  run \"file\" - Runs a LHE file");
-    // println("  cd \"directory\" - Changes directorys");
-    // println("  cre.file \"file\" - Creates a file (C: drive only)");
-    // println("  cre.dir \"dir\" - Creates a directory (C: drive only)");
-    // println("  cp \"src\" \"dest\" - Copies a file (C: drive only)");
-    // println("  mv \"src\" \"dest\" - Moves/renames a file (C: drive only)");
-    // println("  rm \"file\" / del \"file\" - Deletes a file (C: drive only)");
+int cmd_help(ArgumentObject args) {
+    ArgumentValue type = args.getArgument("type");
 
-    for (int i = 0; i < commands.getCommandsCount(); i++) {
-        if (commands.getCommands()[i].helpMessage == nullptr) {
-            DBG_PRINTS("command_functions.cpp::cmd_help :: Command \"");
-            DBG_PRINTS(commands.getCommands()[i].name);
-            DBG_PRINTLNS("\" has no help message!");
-        } else {
-            print("  ");
-            print(commands.getCommands()[i].name);
-            println(commands.getCommands()[i].helpMessage);
-        }
+    if (!type.isValid()) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("help: missing argument!");
+        println("Valid arguments are:");
+        println("    commands - for help about commands");
+        println("    keyboard - for help about keyboard shortcuts");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
     }
-
     
-    // println("Available keyboard shortcuts:");
-    // println("  Ctrl + Alt + E - Toggle command/text mode");
-    // println("  Ctrl + Alt + C - Clear the screen");
-    // println("  Ctrl + Alt + R - Restart the computer");
-    // println("  Ctrl + Alt + S - Shut down the computer (QEMU & VIRTUALBOX ONLY, NO ACPI)");
+    if (strcmp(type, "commands") == 0) {
+        println("Available commands:");
+        for (int i = 0; i < commands.getCommandsCount(); i++) {
+            if (commands.getCommands()[i].helpMessage == nullptr) {
+                DBG_PRINTS("command_functions.cpp::cmd_help :: Command \"");
+                DBG_PRINTS(commands.getCommands()[i].name);
+                DBG_PRINTLNS("\" has no help message!");
+            } else {
+                print("  ");
+                print(commands.getCommands()[i].name);
+                println(commands.getCommands()[i].helpMessage);
+            }
+        }
+    } else if (strcmp(type, "keyboard") == 0) {
+        println("Available keyboard shortcuts:");
+        println("  Ctrl + Alt + E - Toggle command/text mode");
+        println("  Ctrl + Alt + C - Clear the screen");
+        println("  Ctrl + Alt + R - Restart the computer");
+        println("  Ctrl + Alt + S - Shut down the VM (NO ACPI)");
+    } else {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        print("help: unknown option \"");
+        print(type);
+        println("\"");
+        return 1;
+    }
 
     return 0;
 }
@@ -579,37 +579,6 @@ int cmd_fat_init(ArgumentObject) {
     }
     print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
     fatInitialized = true;
-
-    return 0;
-}
-
-int cmd_fat_ls(ArgumentObject) {
-    if (!fatInitialized) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("fat.ls: Drive not initialized. Run 'fat.init' first.");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
-
-    static struct FAT32Dir dir;
-    if (fat32_list_dir(FATcurrent_dir, &dir)) {
-        for (uint32_t i = 0; i < dir.count; i++) {
-            if (dir.entries[i].is_directory) {
-                print_set_color(PRINT_COLOR_CYAN, PRINT_COLOR_BLACK);
-                print("[DIR] ");
-                println(dir.entries[i].name);
-                print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-            } else {
-                println(dir.entries[i].name);
-            }
-        }
-    } else {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("fat.ls: directory not found!");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-
-        return 1;
-    }
 
     return 0;
 }

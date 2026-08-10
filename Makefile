@@ -13,9 +13,9 @@ YYYY := $(shell TZ=$(TZ) date +%Y)
 HH   := $(shell TZ=$(TZ) date +%H)
 MIN  := $(shell TZ=$(TZ) date +%M)
 
-MJ := 2
-MN := 0
-BN := $(shell cat bn)
+MJ := $(shell cat buildInfo/mj)
+MN := $(shell cat buildInfo/mn)
+BN := $(shell cat buildInfo/bn)
 
 VERSION := $(DD)$(MM)$(YYYY).$(HH)$(MIN)-$(MJ).$(MN)-$(BN)
 
@@ -228,7 +228,7 @@ build: stepinit $(program_c_lse_files) $(program_lse_files) $(foreach v,$(VARIAN
 	@printf "$(DIM)[  --]$(RESET) $(MAGENTA)$(BOLD) ISO$(RESET) $(DIM)dist/x86_64/kernel_$(VERSION).iso$(RESET)\n"
 	@grub-mkrescue /usr/lib/grub/i386-pc -o dist/x86_64/kernel_$(VERSION).iso targets/x86_64/iso > /dev/null 2>&1
 	@cp dist/x86_64/kernel_$(VERSION).iso vault/
-	@next=$$(($(BN) + 1)); echo $$next > bn;
+	@next=$$(($(BN) + 1)); echo $$next > buildInfo/bn;
 	@rm -f $(STEP_FILE)
 	@printf "$(GREEN)$(BOLD)Build complete$(RESET)\n"
 	@$(foreach v,$(VARIANTS),printf "  $(DIM)→ dist/x86_64/kernel_$(v).bin$(RESET)\n";)

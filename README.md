@@ -14,3 +14,5 @@ docker exec -it myos_cpp bash
 Please also view the CHANGELOG file for information about what changed between versions
 
 Please also view and edit the Makefile:259, it uses a Windows Path for PuTTY since this was originally coded in wsl
+
+The vault folder will be uploaded on [this github repo](https://github.com/liam1581/os_vault)

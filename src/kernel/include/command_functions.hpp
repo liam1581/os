@@ -3,7 +3,7 @@
 #include "commands.hpp"
 
 int cmd_echo(ArgumentObject args);
-int cmd_help(ArgumentObject);
+int cmd_help(ArgumentObject args);
 int cmd_cls(ArgumentObject);
 int cmd_restart(ArgumentObject);
 int cmd_shutdown(ArgumentObject);

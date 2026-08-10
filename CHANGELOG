@@ -1,3 +1,11 @@
+2.1:
+    - Changed version_naming_scheme to include Tx versions
+    - Made buildInfo directory for major and minor version number aswell as build number
+    - Added vault folder to gitignore
+    - Changed the help command to now take arguments:
+        - help "commands" - Displays commands help message
+        - help "keyboard" - Displays keyboard shortcuts
+
 2.0:
     - Added functionality for Commands::addHelp();
 

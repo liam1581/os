@@ -350,7 +350,8 @@ void Commands::handleCommand(char keyboard_buffer[]) {
 }
 
 void Commands::registerCommands() {
-    add("help", 0);
+    add("help", 1);
+    argument<const char*>("help", "type");
     executes("help", cmd_help);
 
     add("echo", 1);

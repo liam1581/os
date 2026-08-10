@@ -8,5 +8,5 @@ HH: Hour
 MIN: Minutes
 
 MJVN: Major Versin Number
-MNVN: Minor Version Number
+MNVN: Minor Version Number (_Tx = Testing Version x)
 BN: Build Number
