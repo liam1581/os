@@ -57,7 +57,7 @@ public:
             
             if (commands[i].argumentCount >= MAX_ARGUMENTS ||
                 commands[i].argumentCount >= commands[i].argCount) {
-                KERNEL_PANIC("commands.hpp", "TOO MANY ARGUMENTS DEFINED!");
+                KERNEL_PANIC("commands.hpp", "TOO MANY ARGUMENTS DEFINED!", 1);
                 return;
             }
 
@@ -77,7 +77,7 @@ public:
             }
 
             if (!typeKnown) {
-                KERNEL_PANIC("commands.hpp", "TRYING TO DEFINE UNKNOWN ARGUMENT TYPE");
+                KERNEL_PANIC("commands.hpp", "TRYING TO DEFINE UNKNOWN ARGUMENT TYPE", 1);
                 return;
             }
 
@@ -133,7 +133,7 @@ public:
 private:
     const char* rawArguments;
     const Commands::Command* command;
-    mutable char stringBuffer[MAX_ARGUMENT_BUFFER];
+    mutable char stringBuffers[MAX_ARGUMENTS][MAX_ARGUMENT_BUFFER];
 
     bool getToken(int index, char* output, size_t outputSize) const;
 };

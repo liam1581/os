@@ -168,8 +168,7 @@ ArgumentValue::operator const char*() const {
 ArgumentObject::ArgumentObject(
     const char* rawArguments,
     const Commands::Command* command
-) : rawArguments(rawArguments), command(command), stringBuffer{} {
-}
+) : rawArguments(rawArguments), command(command), stringBuffers{} {}
 
 const char* ArgumentObject::raw() const {
     return rawArguments;
@@ -235,14 +234,18 @@ ArgumentValue ArgumentObject::getArgument(const char* argumentName) const {
             continue;
         }
 
-        if (!getToken(i, stringBuffer, MAX_ARGUMENT_BUFFER)) {
+        if (i >= MAX_ARGUMENTS) {
+            return ArgumentValue(command->arguments[i].type, nullptr, 0);
+        }
+
+        if (!getToken(i, stringBuffers[i], MAX_ARGUMENT_BUFFER)) {
             return ArgumentValue(command->arguments[i].type, nullptr, 0);
         }
 
         size_t length = 0;
-        while (stringBuffer[length] != '\0') length++;
+        while (stringBuffers[i][length] != '\0') length++;
 
-        return ArgumentValue(command->arguments[i].type, stringBuffer, length);
+        return ArgumentValue(command->arguments[i].type, stringBuffers[i], length);
     }
 
     return ArgumentValue(ARG_STRING, nullptr, 0);
@@ -250,7 +253,7 @@ ArgumentValue ArgumentObject::getArgument(const char* argumentName) const {
 
 void Commands::add(const char* commandName, int argCount) {
     if (commandCount >= MAX_COMMANDS || argCount < 0 || argCount > MAX_ARGUMENTS) {
-        KERNEL_PANIC("commands.cpp", "TOO MANY COMMANDS/ARGUMENTS REGISERED");
+        KERNEL_PANIC("commands.cpp", "TOO MANY COMMANDS/ARGUMENTS REGISERED", 1);
         return;
     }
 
@@ -331,9 +334,8 @@ void Commands::handleCommand(char keyboard_buffer[]) {
         } else {
             clear_screen();
             print("KRNLPANIC::");
-            print(commands[i].name);
-            delay_s(5);
-            KERNEL_PANIC("commands.cpp", "COMMAND DEFINED AS KRNLPANIC::******** HAS NO FUNCTION DEFINED");
+            println(commands[i].name);
+            KERNEL_PANIC("commands.cpp", "COMMAND DEFINED AS KRNLPANIC::******** HAS NO FUNCTION DEFINED", 0);
         }
 
         return;
@@ -392,6 +394,33 @@ void Commands::registerCommands() {
     
     add("fat.init", 0);
     executes("fat.init", cmd_fat_init);
+
+    add("cre.file", 1);
+    argument<const char*>("cre.file", "file");
+    executes("cre.file", cmd_cre_file);
+
+    add("cre.dir", 1);
+    argument<const char*>("cre.dir", "dir");
+    executes("cre.dir", cmd_cre_dir);
+
+    add("cp", 2);
+    argument<const char*>("cp", "src");
+    argument<const char*>("cp", "dest");
+    executes("cp", cmd_cp);
+
+    add("mv", 2);
+    argument<const char*>("mv", "src");
+    argument<const char*>("mv", "dest");
+    executes("mv", cmd_mv);
+
+    add("rm", 1);
+    argument<const char*>("rm", "file");
+    executes("rm", cmd_rm);
+
+    add("del", 1);
+    argument<const char*>("del", "file");
+    executes("del", cmd_rm);
+    
 
     add("TESTING", 0);
 }

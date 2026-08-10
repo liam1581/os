@@ -6,9 +6,3 @@ Planned for future versions:
         - maybe png/jpg images at some point too
 
     (SOON) make programs on C and D drive (C and D directory in src/programs)
-    (SOON) make more FAT32 commands:
-            - cre.file (create file) "name"
-            - cre.dir (create directory) "dir"
-            - cp "src" "dest"
-            - mv "src" "dest"
-            - rm/del "file"

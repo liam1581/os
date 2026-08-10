@@ -219,7 +219,7 @@ bool iso9660_read_file(const char* path, uint8_t* buffer, uint32_t* out_size) {
     }
 
     // List the parent directory to find the file entry
-    struct ISO9660Dir dir;
+    static struct ISO9660Dir dir;
     if (!iso9660_list_dir(dir_path, &dir)) return false;
 
     for (uint32_t i = 0; i < dir.count; i++) {

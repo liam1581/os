@@ -1,0 +1,12 @@
+DDMMYYYY.HHMM-MJVN.MNVN-BN
+
+(CET)
+DD: Day
+MM: Month
+YYYY: Year
+HH: Hour
+MM: Minutes
+
+MJVN: Major Versin Number
+MNVN: Minor Version Number
+BN: Build Number

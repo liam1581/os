@@ -24,6 +24,9 @@ char FATcurrent_dir[1024] = "/";
 bool cdInitialized = false;
 bool fatInitialized = false;
 
+// Which drive is currently active: 'D' = CD/ISO9660, 'C' = FAT32 disk.
+// ls/cat/run operate on whichever drive this is; cd can switch it via an
+// explicit "D:..." / "C:..." prefix.
 char currentDrive = 'D';
 
 void print_not_initialized(const char* command, char drive) {
@@ -37,6 +40,7 @@ void print_not_initialized(const char* command, char drive) {
     print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
 }
 
+// Case-insensitive comparison of a dir-entry name against a filename.
 static bool names_match(const char* entryName, const char* filename) {
     for (size_t j = 0; ; j++) {
         char a = entryName[j];
@@ -77,6 +81,11 @@ int cmd_help(ArgumentObject) {
     println("  cat \"file\" - Prints the file's content");
     println("  run \"file\" - Runs a LHE file");
     println("  cd \"directory\" - Changes directorys");
+    println("  cre.file \"file\" - Creates a file (C: drive only)");
+    println("  cre.dir \"dir\" - Creates a directory (C: drive only)");
+    println("  cp \"src\" \"dest\" - Copies a file (C: drive only)");
+    println("  mv \"src\" \"dest\" - Moves/renames a file (C: drive only)");
+    println("  rm \"file\" / del \"file\" - Deletes a file (C: drive only)");
 
     
     println("Available keyboard shortcuts:");
@@ -188,7 +197,7 @@ int cmd_ls(ArgumentObject) {
             return 1;
         }
 
-        struct FAT32Dir dir;
+        static struct FAT32Dir dir;
         if (fat32_list_dir(FATcurrent_dir, &dir)) {
             for (uint32_t i = 0; i < dir.count; i++) {
                 if (dir.entries[i].is_directory) {
@@ -215,7 +224,7 @@ int cmd_ls(ArgumentObject) {
         return 1;
     }
 
-    struct ISO9660Dir dir;
+    static struct ISO9660Dir dir;
     if (iso9660_list_dir(current_dir, &dir)) {
         for (uint32_t i = 0; i < dir.count; i++) {
             if (dir.entries[i].is_directory) {
@@ -257,7 +266,7 @@ int cmd_cat(ArgumentObject args) {
         char filename[2048];
         strcat_s(filename, FATcurrent_dir, relative_filename);
 
-        struct FAT32Dir dir;
+        static struct FAT32Dir dir;
         if (fat32_list_dir(FATcurrent_dir, &dir)) {
             for (uint32_t i = 0; i < dir.count; i++) {
                 if (names_match(dir.entries[i].name, relative_filename) && dir.entries[i].is_directory) {
@@ -295,7 +304,7 @@ int cmd_cat(ArgumentObject args) {
     strcat_s(filename, current_dir, relative_filename);
 
     // Check if it's a directory by looking it up in the current dir listing
-    struct ISO9660Dir dir;
+    static struct ISO9660Dir dir;
     if (iso9660_list_dir(current_dir, &dir)) {
         for (uint32_t i = 0; i < dir.count; i++) {
             if (names_match(dir.entries[i].name, relative_filename) && dir.entries[i].is_directory) {
@@ -449,10 +458,10 @@ int cmd_cd(ArgumentObject args) {
     // Verify the directory actually exists on the target drive
     bool exists;
     if (requestedDrive == 'C') {
-        struct FAT32Dir dir;
+        static struct FAT32Dir dir;
         exists = fat32_list_dir(new_dir, &dir);
     } else {
-        struct ISO9660Dir dir;
+        static struct ISO9660Dir dir;
         exists = iso9660_list_dir(new_dir, &dir);
     }
 
@@ -471,6 +480,66 @@ int cmd_cd(ArgumentObject args) {
     baseDir[i] = '\0';
 
     currentDrive = requestedDrive;
+
+    return 0;
+}
+
+int cmd_fat_cat(ArgumentObject args) {
+    if (!fatInitialized) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("fat.cat: Drive not initialized. Run 'fat.init' first.");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    ArgumentValue fileArg = args.getArgument("file");
+    if (!fileArg.isValid()) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("fat.cat: missing file argument");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    const char* relative_filename = fileArg;
+
+    char filename[2048];
+    strcat_s(filename, FATcurrent_dir, relative_filename);
+
+    // Check if it's a directory by looking it up in the current dir listing
+    static struct FAT32Dir dir;
+    if (fat32_list_dir(FATcurrent_dir, &dir)) {
+        for (uint32_t i = 0; i < dir.count; i++) {
+            // compare name ignoring case
+            bool match = true;
+            for (size_t j = 0; ; j++) {
+                char a = dir.entries[i].name[j];
+                char b = relative_filename[j];
+                if (a >= 'A' && a <= 'Z') a += 32;
+                if (b >= 'A' && b <= 'Z') b += 32;
+                if (a != b) { match = false; break; }
+                if (a == '\0') break;
+            }
+            if (match && dir.entries[i].is_directory) {
+                print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+                println("fat.cat: cannot cat a directory");
+                print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+                return 1;
+            }
+        }
+    }
+
+    uint8_t file_buf[4096];
+    uint32_t file_size;
+    if (fat32_read_file(filename, file_buf, &file_size)) {
+        for (uint32_t i = 0; i < file_size; i++) {
+            printc((char)file_buf[i]);
+        }
+        printc('\n');
+    } else {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("fat.cat: file not found!");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
 
     return 0;
 }
@@ -496,6 +565,245 @@ int cmd_fat_init(ArgumentObject) {
     }
     print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
     fatInitialized = true;
+
+    return 0;
+}
+
+int cmd_fat_ls(ArgumentObject) {
+    if (!fatInitialized) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("fat.ls: Drive not initialized. Run 'fat.init' first.");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    static struct FAT32Dir dir;
+    if (fat32_list_dir(FATcurrent_dir, &dir)) {
+        for (uint32_t i = 0; i < dir.count; i++) {
+            if (dir.entries[i].is_directory) {
+                print_set_color(PRINT_COLOR_CYAN, PRINT_COLOR_BLACK);
+                print("[DIR] ");
+                println(dir.entries[i].name);
+                print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+            } else {
+                println(dir.entries[i].name);
+            }
+        }
+    } else {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("fat.ls: directory not found!");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+
+        return 1;
+    }
+
+    return 0;
+}
+
+int cmd_cre_file(ArgumentObject args) {
+    if (currentDrive != 'C') {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("cre.file: only supported on the FAT drive (C:). Switch with cd \"C:/\".");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    if (!fatInitialized) {
+        print_not_initialized("cre.file", 'C');
+        return 1;
+    }
+
+    ArgumentValue fileArg = args.getArgument("file");
+    if (!fileArg.isValid()) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("cre.file: missing file argument");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    const char* relative_filename = fileArg;
+
+    char path[2048];
+    strcat_s(path, FATcurrent_dir, relative_filename);
+
+    if (!fat32_create_file(path)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("cre.file: failed to create file (already exists or invalid path)");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    return 0;
+}
+
+int cmd_cre_dir(ArgumentObject args) {
+    if (currentDrive != 'C') {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("cre.dir: only supported on the FAT drive (C:). Switch with cd \"C:/\".");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    if (!fatInitialized) {
+        print_not_initialized("cre.dir", 'C');
+        return 1;
+    }
+
+    ArgumentValue dirArg = args.getArgument("dir");
+    if (!dirArg.isValid()) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("cre.dir: missing dir argument");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    const char* relative_dirname = dirArg;
+
+    char path[2048];
+    strcat_s(path, FATcurrent_dir, relative_dirname);
+
+    if (!fat32_create_dir(path)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("cre.dir: failed to create directory (already exists or invalid path)");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    return 0;
+}
+
+int cmd_cp(ArgumentObject args) {
+    if (currentDrive != 'C') {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("cp: only supported on the FAT drive (C:). Switch with cd \"C:/\".");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    if (!fatInitialized) {
+        print_not_initialized("cp", 'C');
+        return 1;
+    }
+
+    ArgumentValue srcArg = args.getArgument("src");
+    ArgumentValue destArg = args.getArgument("dest");
+    if (!srcArg.isValid() || !destArg.isValid()) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("cp: missing src/dest argument");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    const char* relative_src = srcArg;
+    const char* relative_dest = destArg;
+
+    char srcPath[2048];
+    char destPath[2048];
+    strcat_s(srcPath, FATcurrent_dir, relative_src);
+    strcat_s(destPath, FATcurrent_dir, relative_dest);
+
+    // fat32_copy_file refuses directories internally, but check ourselves
+    // first so we can give a clearer error than a generic failure.
+    static struct FAT32Dir srcDir;
+    if (fat32_list_dir(srcPath, &srcDir)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("cp: copying directories is not supported");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    if (!fat32_copy_file(srcPath, destPath)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("cp: failed to copy file (source not found?)");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    return 0;
+}
+
+int cmd_mv(ArgumentObject args) {
+    if (currentDrive != 'C') {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("mv: only supported on the FAT drive (C:). Switch with cd \"C:/\".");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    if (!fatInitialized) {
+        print_not_initialized("mv", 'C');
+        return 1;
+    }
+
+    ArgumentValue srcArg = args.getArgument("src");
+    ArgumentValue destArg = args.getArgument("dest");
+    if (!srcArg.isValid() || !destArg.isValid()) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("mv: missing src/dest argument");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    const char* relative_src = srcArg;
+    const char* relative_dest = destArg;
+
+    char srcPath[2048];
+    char destPath[2048];
+    strcat_s(srcPath, FATcurrent_dir, relative_src);
+    strcat_s(destPath, FATcurrent_dir, relative_dest);
+
+    // fat32_move_file (copy+delete) refuses directories internally too;
+    // check ourselves first for a clearer error message.
+    static struct FAT32Dir srcDir;
+    if (fat32_list_dir(srcPath, &srcDir)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("mv: moving directories is not supported");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    if (!fat32_move_file(srcPath, destPath)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("mv: failed to move file (source not found?)");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    return 0;
+}
+
+int cmd_rm(ArgumentObject args) {
+    if (currentDrive != 'C') {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("rm: only supported on the FAT drive (C:). Switch with cd \"C:/\".");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    if (!fatInitialized) {
+        print_not_initialized("rm", 'C');
+        return 1;
+    }
+
+    ArgumentValue fileArg = args.getArgument("file");
+    if (!fileArg.isValid()) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("rm: missing file argument");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    const char* relative_filename = fileArg;
+
+    char path[2048];
+    strcat_s(path, FATcurrent_dir, relative_filename);
+
+    // fat32_delete_file refuses directories internally; check ourselves
+    // first for a clearer error message.
+    static struct FAT32Dir dir;
+    if (fat32_list_dir(path, &dir)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("rm: deleting directories is not supported");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    if (!fat32_delete_file(path)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("rm: failed to delete file (not found?)");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
 
     return 0;
 }

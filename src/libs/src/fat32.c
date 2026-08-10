@@ -310,7 +310,7 @@ static bool resolve_path(const char* path, uint32_t* out_cluster, bool* out_is_d
         component[ci] = '\0';
         if (*p == '/') p++;
 
-        struct FAT32Dir dir;
+        static struct FAT32Dir dir;
         dir.count = 0;
         if (!read_dir_cluster(cluster, &dir)) return false;
 
