@@ -1,3 +1,8 @@
+2.4:
+    - Made src/programs have cd and fat directory for making programs for the cd or fat32 disk
+        - All programs will be outputted (in lhe format) to targets/x86_64/(disk OR iso)/programs
+    - Made programs be able to be coded in c++ too
+
 2.3:
     - Changed welcome message in main.cpp
     - Added NullArgument define for empty ArgumentObject
