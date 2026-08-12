@@ -1,6 +1,7 @@
 #include "krnl.h"
 
 #include "print.h"
+#include "debug.h"
 #include "framebuffer.h"
 
 void KERNEL_PANIC(const char* filename, const char* error, int cls) {
@@ -10,6 +11,11 @@ void KERNEL_PANIC(const char* filename, const char* error, int cls) {
     print(filename);
     println("\"!");
     println(error);
+
+    DBG_PRINTS("KERNEL PANIC IN\"");
+    DBG_PRINTS(filename);
+    DBG_PRINTLNS("\"!");
+    DBG_PRINTLNS(error);
     
     while (1);
 }

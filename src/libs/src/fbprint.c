@@ -274,7 +274,6 @@ static const uint8_t* get_glyph(char c)
         0x08, 0x10, 0x1F
     };
 
-
     static const uint8_t zero[7] = {
         0x0E, 0x11, 0x13, 0x15,
         0x19, 0x11, 0x0E
@@ -325,6 +324,7 @@ static const uint8_t* get_glyph(char c)
         0x01, 0x01, 0x0E
     };
 
+    /* Existing punctuation */
 
     static const uint8_t colon[7] = {
         0x00, 0x04, 0x04, 0x00,
@@ -371,6 +371,258 @@ static const uint8_t* get_glyph(char c)
         0x02, 0x01, 0x01
     };
 
+    /* Missing printable punctuation */
+
+    static const uint8_t quote[7] = {
+        0x0A, 0x0A, 0x0A, 0x00,
+        0x00, 0x00, 0x00
+    };
+
+    static const uint8_t hash[7] = {
+        0x0A, 0x0A, 0x1F, 0x0A,
+        0x1F, 0x0A, 0x0A
+    };
+
+    static const uint8_t dollar[7] = {
+        0x04, 0x0F, 0x14, 0x0E,
+        0x05, 0x1E, 0x04
+    };
+
+    static const uint8_t percent[7] = {
+        0x19, 0x19, 0x02, 0x04,
+        0x08, 0x13, 0x13
+    };
+
+    static const uint8_t ampersand[7] = {
+        0x0C, 0x12, 0x12, 0x0C,
+        0x15, 0x12, 0x0D
+    };
+
+    static const uint8_t apostrophe[7] = {
+        0x04, 0x04, 0x08, 0x00,
+        0x00, 0x00, 0x00
+    };
+
+    static const uint8_t lparen[7] = {
+        0x02, 0x04, 0x08, 0x08,
+        0x08, 0x04, 0x02
+    };
+
+    static const uint8_t rparen[7] = {
+        0x08, 0x04, 0x02, 0x02,
+        0x02, 0x04, 0x08
+    };
+
+    static const uint8_t asterisk[7] = {
+        0x00, 0x04, 0x15, 0x0E,
+        0x15, 0x04, 0x00
+    };
+
+    static const uint8_t plus[7] = {
+        0x00, 0x04, 0x04, 0x1F,
+        0x04, 0x04, 0x00
+    };
+
+    static const uint8_t semicolon[7] = {
+        0x00, 0x06, 0x06, 0x00,
+        0x06, 0x04, 0x08
+    };
+
+    static const uint8_t less[7] = {
+        0x02, 0x04, 0x08, 0x10,
+        0x08, 0x04, 0x02
+    };
+
+    static const uint8_t equal[7] = {
+        0x00, 0x1F, 0x00, 0x1F,
+        0x00, 0x00, 0x00
+    };
+
+    static const uint8_t greater[7] = {
+        0x08, 0x04, 0x02, 0x01,
+        0x02, 0x04, 0x08
+    };
+
+    static const uint8_t at[7] = {
+        0x0E, 0x11, 0x17, 0x15,
+        0x17, 0x10, 0x0F
+    };
+
+    static const uint8_t lbracket[7] = {
+        0x0E, 0x08, 0x08, 0x08,
+        0x08, 0x08, 0x0E
+    };
+
+    static const uint8_t rbracket[7] = {
+        0x0E, 0x02, 0x02, 0x02,
+        0x02, 0x02, 0x0E
+    };
+
+    static const uint8_t caret[7] = {
+        0x04, 0x0A, 0x11, 0x00,
+        0x00, 0x00, 0x00
+    };
+
+    static const uint8_t backtick[7] = {
+        0x08, 0x04, 0x02, 0x00,
+        0x00, 0x00, 0x00
+    };
+
+    static const uint8_t lbrace[7] = {
+        0x02, 0x04, 0x04, 0x08,
+        0x04, 0x04, 0x02
+    };
+
+    static const uint8_t pipe[7] = {
+        0x04, 0x04, 0x04, 0x04,
+        0x04, 0x04, 0x04
+    };
+
+    static const uint8_t rbrace[7] = {
+        0x08, 0x04, 0x04, 0x02,
+        0x04, 0x04, 0x08
+    };
+
+    static const uint8_t tilde[7] = {
+        0x00, 0x00, 0x09, 0x16,
+        0x00, 0x00, 0x00
+    };
+
+    /*
+     * Lowercase letters.
+     * These use a lowercase x-height of rows 3-6 where appropriate.
+     */
+
+    static const uint8_t a[7] = {
+        0x00, 0x00, 0x0E, 0x01,
+        0x0F, 0x11, 0x0F
+    };
+
+    static const uint8_t b[7] = {
+        0x10, 0x10, 0x1E, 0x11,
+        0x11, 0x11, 0x1E
+    };
+
+    static const uint8_t cc[7] = {
+        0x00, 0x00, 0x0F, 0x10,
+        0x10, 0x10, 0x0F
+    };
+
+    static const uint8_t d[7] = {
+        0x01, 0x01, 0x0F, 0x11,
+        0x11, 0x11, 0x0F
+    };
+
+    static const uint8_t e[7] = {
+        0x00, 0x00, 0x0E, 0x11,
+        0x1F, 0x10, 0x0E
+    };
+
+    static const uint8_t f[7] = {
+        0x06, 0x09, 0x08, 0x1E,
+        0x08, 0x08, 0x08
+    };
+
+    static const uint8_t g[7] = {
+        0x00, 0x00, 0x0F, 0x11,
+        0x0F, 0x01, 0x1E
+    };
+
+    static const uint8_t h[7] = {
+        0x10, 0x10, 0x1E, 0x11,
+        0x11, 0x11, 0x11
+    };
+
+    static const uint8_t i[7] = {
+        0x04, 0x00, 0x0C, 0x04,
+        0x04, 0x04, 0x0E
+    };
+
+    static const uint8_t j[7] = {
+        0x02, 0x00, 0x06, 0x02,
+        0x02, 0x12, 0x0C
+    };
+
+    static const uint8_t k[7] = {
+        0x10, 0x10, 0x12, 0x14,
+        0x18, 0x14, 0x12
+    };
+
+    static const uint8_t l[7] = {
+        0x0C, 0x04, 0x04, 0x04,
+        0x04, 0x04, 0x0E
+    };
+
+    static const uint8_t m[7] = {
+        0x00, 0x00, 0x1A, 0x15,
+        0x15, 0x15, 0x15
+    };
+
+    static const uint8_t n[7] = {
+        0x00, 0x00, 0x1E, 0x11,
+        0x11, 0x11, 0x11
+    };
+
+    static const uint8_t o[7] = {
+        0x00, 0x00, 0x0E, 0x11,
+        0x11, 0x11, 0x0E
+    };
+
+    static const uint8_t p[7] = {
+        0x00, 0x00, 0x1E, 0x11,
+        0x1E, 0x10, 0x10
+    };
+
+    static const uint8_t q[7] = {
+        0x00, 0x00, 0x0F, 0x11,
+        0x0F, 0x01, 0x01
+    };
+
+    static const uint8_t r[7] = {
+        0x00, 0x00, 0x17, 0x18,
+        0x10, 0x10, 0x10
+    };
+
+    static const uint8_t s[7] = {
+        0x00, 0x00, 0x0F, 0x10,
+        0x0E, 0x01, 0x1E
+    };
+
+    static const uint8_t t[7] = {
+        0x08, 0x08, 0x1F, 0x08,
+        0x08, 0x09, 0x06
+    };
+
+    static const uint8_t u[7] = {
+        0x00, 0x00, 0x11, 0x11,
+        0x11, 0x13, 0x0D
+    };
+
+    static const uint8_t v[7] = {
+        0x00, 0x00, 0x11, 0x11,
+        0x11, 0x0A, 0x04
+    };
+
+    static const uint8_t w[7] = {
+        0x00, 0x00, 0x11, 0x15,
+        0x15, 0x1B, 0x11
+    };
+
+    static const uint8_t x[7] = {
+        0x00, 0x00, 0x11, 0x0A,
+        0x04, 0x0A, 0x11
+    };
+
+    static const uint8_t y[7] = {
+        0x00, 0x00, 0x11, 0x11,
+        0x0F, 0x01, 0x1E
+    };
+
+    static const uint8_t z[7] = {
+        0x00, 0x00, 0x1F, 0x02,
+        0x04, 0x08, 0x1F
+    };
+
 
     switch (c) {
         case ' ': return space;
@@ -402,6 +654,33 @@ static const uint8_t* get_glyph(char c)
         case 'Y': return Y;
         case 'Z': return Z;
 
+        case 'a': return a;
+        case 'b': return b;
+        case 'c': return cc;
+        case 'd': return d;
+        case 'e': return e;
+        case 'f': return f;
+        case 'g': return g;
+        case 'h': return h;
+        case 'i': return i;
+        case 'j': return j;
+        case 'k': return k;
+        case 'l': return l;
+        case 'm': return m;
+        case 'n': return n;
+        case 'o': return o;
+        case 'p': return p;
+        case 'q': return q;
+        case 'r': return r;
+        case 's': return s;
+        case 't': return t;
+        case 'u': return u;
+        case 'v': return v;
+        case 'w': return w;
+        case 'x': return x;
+        case 'y': return y;
+        case 'z': return z;
+
         case '0': return zero;
         case '1': return one;
         case '2': return two;
@@ -413,15 +692,41 @@ static const uint8_t* get_glyph(char c)
         case '8': return eight;
         case '9': return nine;
 
-        case ':': return colon;
-        case '.': return period;
-        case ',': return comma;
         case '!': return exclamation;
+        case '"': return quote;
+        case '#': return hash;
+        case '$': return dollar;
+        case '%': return percent;
+        case '&': return ampersand;
+        case '\'': return apostrophe;
+        case '(': return lparen;
+        case ')': return rparen;
+        case '*': return asterisk;
+        case '+': return plus;
+        case ',': return comma;
         case '-': return minus;
+        case '.': return period;
         case '/': return slash;
-        case '_': return underscore;
+
+        case ':': return colon;
+        case ';': return semicolon;
+        case '<': return less;
+        case '=': return equal;
+        case '>': return greater;
         case '?': return question;
+        case '@': return at;
+
+        case '[': return lbracket;
         case '\\': return backslash;
+        case ']': return rbracket;
+        case '^': return caret;
+        case '_': return underscore;
+        case '`': return backtick;
+
+        case '{': return lbrace;
+        case '|': return pipe;
+        case '}': return rbrace;
+        case '~': return tilde;
 
         default:
             return question;
@@ -642,7 +947,7 @@ static void draw_glyph(
 )
 {
     const uint8_t* glyph =
-        get_glyph(uppercase(c));
+        get_glyph(c);
 
     struct RGBColor fg =
         color_palette[foreground_color];

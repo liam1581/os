@@ -1,3 +1,8 @@
+2.6:
+    - Fixed crashes
+    - Fully implemented ASCII font
+    - Fully working (almost) framebuffer thingy
+
 2.5:
     - Added images directory to cd drive for image rendering
         - Added minecraft's grass block side texture in bmp format for now

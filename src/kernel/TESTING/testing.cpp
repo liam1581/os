@@ -14,12 +14,7 @@ extern "C" {
     #include "drivers/iso9660.h"
 }
 
-extern "C" void kernel_testing(uint64_t multiboot_info_addr) {
-    if (!framebuffer_init(multiboot_info_addr))
-        KERNEL_PANIC("entrypoint.c", "FAILED TO INITIALIZE FRAMEBUFFER", 1);
-    if (!fbprint_init(multiboot_info_addr))
-        KERNEL_PANIC("entrypoint.c", "FAILED TO INITIALIZE FB_PRINT", 1);
-    
+extern "C" void kernel_testing() {  
     clear_screen();
     print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
     println("KERNEL IS CURRENTLY IN TESTING MODE");
@@ -38,7 +33,7 @@ extern "C" void kernel_testing(uint64_t multiboot_info_addr) {
     print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
 
     cmd_atapi_init(NullArgument);
-    //cmd_fat_init(NullArgument);
+    cmd_fat_init(NullArgument);
     
     bmpTestingMain();
     

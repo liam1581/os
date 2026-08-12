@@ -2,12 +2,18 @@
 
 #include <stdint.h>
 
+#include "framebuffer.h"
+#include "fbprint.h"
 #include "pmm.h"
 #include "kheap.h"
 
 #include "krnl.h"
 
 void kernel_main(uint64_t multiboot_info_addr) {
+    if (!framebuffer_init(multiboot_info_addr))
+        KERNEL_PANIC("entrypoint.c", "FAILED TO INITIALIZE FRAMEBUFFER", 1);
+    if (!fbprint_init(multiboot_info_addr))
+        KERNEL_PANIC("entrypoint.c", "FAILED TO INITIALIZE FB_PRINT", 1);
     pmm_init(multiboot_info_addr);
     kheap_init();
     
@@ -19,7 +25,7 @@ void kernel_main(uint64_t multiboot_info_addr) {
 #endif
 #ifdef TESTING
 #include "testing.h"
-    kernel_testing(multiboot_info_addr);
+    kernel_testing();
 #endif
 #ifdef KERNELPANIC
     KERNEL_PANIC("entrypoint.c", "KERNEL PANIC CAUSED BY USER\nSELECT PRODUCTION OR TESTING KERNEL IN GRUB", 1);

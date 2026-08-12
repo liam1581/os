@@ -7,8 +7,8 @@ extern "C" {
 }
 
 #define MAX_COMMANDS 256
-#define MAX_ARGUMENTS 16
-#define MAX_ARGUMENT_BUFFER 1024
+#define MAX_ARGUMENTS 4
+#define MAX_ARGUMENT_BUFFER 512
 
 #define NullArgument ArgumentObject(NULL, nullptr)
 

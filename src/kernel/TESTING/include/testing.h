@@ -6,7 +6,7 @@ extern "C" {
 
 #include <stdint.h>
 
-void kernel_testing(uint64_t multiboot_info_addr);
+void kernel_testing();
 
 #ifdef __cplusplus
 }
