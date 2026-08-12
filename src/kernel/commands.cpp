@@ -226,7 +226,7 @@ bool ArgumentObject::getToken(int index, char* output, size_t outputSize) const 
 
 ArgumentValue ArgumentObject::getArgument(const char* argumentName) const {
     if (command == nullptr || argumentName == nullptr) {
-        return ArgumentValue(ARG_STRING, nullptr, 0);
+        return ArgumentValue(ArgumentType::ARG_STRING, nullptr, 0);
     }
 
     for (int i = 0; i < command->argumentCount; i++) {
@@ -248,7 +248,7 @@ ArgumentValue ArgumentObject::getArgument(const char* argumentName) const {
         return ArgumentValue(command->arguments[i].type, stringBuffers[i], length);
     }
 
-    return ArgumentValue(ARG_STRING, nullptr, 0);
+    return ArgumentValue(ArgumentType::ARG_STRING, nullptr, 0);
 }
 
 void Commands::add(const char* commandName, int argCount) {
@@ -259,11 +259,7 @@ void Commands::add(const char* commandName, int argCount) {
 
     commands[commandCount] = {
         commandName,
-        argCount,
-        nullptr,
-        nullptr,
-        {},
-        0
+        argCount
     };
 
     commandCount++;

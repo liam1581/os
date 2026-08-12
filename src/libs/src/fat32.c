@@ -1,5 +1,6 @@
 #include "drivers/fat32.h"
 #include "drivers/ata.h"
+#include "debug.h"
 
 // ─── BPB (BIOS Parameter Block) ───────────────────────────────────────────────
 
@@ -113,25 +114,32 @@ static bool fat_set_next_cluster(uint32_t cluster, uint32_t value) {
 
 // Find a free cluster
 static uint32_t fat_alloc_cluster() {
+    DBG_PRINTLNS("fat_alloc_cluster: start");
     uint32_t total_clusters = (bpb.total_sectors_32 - data_start_lba) / sectors_per_cluster + 2;
+    DBG_PRINTLNS("fat_alloc_cluster: computed total_clusters");
     for (uint32_t c = 2; c < total_clusters; c++) {
         uint32_t next = fat_get_next_cluster(c);
         if (next == 0x00000000) {
+            DBG_PRINTLNS("fat_alloc_cluster: found free cluster, marking EOC");
             fat_set_next_cluster(c, 0x0FFFFFFF); // mark end of chain
+            DBG_PRINTLNS("fat_alloc_cluster: marked EOC, returning");
             return c;
         }
     }
+    DBG_PRINTLNS("fat_alloc_cluster: disk full");
     return 0; // disk full
 }
 
 // Zero out a cluster
 static bool cluster_zero(uint32_t cluster) {
+    DBG_PRINTLNS("cluster_zero: start");
     uint8_t zero[ATA_SECTOR_SIZE];
     for (int i = 0; i < ATA_SECTOR_SIZE; i++) zero[i] = 0;
     uint32_t lba = cluster_to_lba(cluster);
     for (uint32_t s = 0; s < sectors_per_cluster; s++) {
         if (!ata_write_sector(lba + s, zero)) return false;
     }
+    DBG_PRINTLNS("cluster_zero: done");
     return true;
 }
 
@@ -392,31 +400,39 @@ static bool split_path(const char* path, uint32_t* parent_cluster, char* filenam
 
 // Write a new 8.3 directory entry into a directory cluster chain
 static bool write_dir_entry(uint32_t dir_cluster, FAT32DirEntry* new_entry) {
+    DBG_PRINTLNS("write_dir_entry: start");
     uint32_t cluster = dir_cluster;
     while (cluster < 0x0FFFFFF8) {
+        DBG_PRINTLNS("write_dir_entry: scanning cluster for free slot");
         uint32_t lba = cluster_to_lba(cluster);
         for (uint32_t s = 0; s < sectors_per_cluster; s++) {
             if (!ata_read_sector(lba + s, sector_buf)) return false;
             FAT32DirEntry* entries = (FAT32DirEntry*)sector_buf;
             for (uint32_t i = 0; i < ATA_SECTOR_SIZE / 32; i++) {
                 if (entries[i].name[0] == 0x00 || entries[i].name[0] == 0xE5) {
+                    DBG_PRINTLNS("write_dir_entry: found free slot, writing entry");
                     entries[i] = *new_entry;
-                    return ata_write_sector(lba + s, sector_buf);
+                    bool ok = ata_write_sector(lba + s, sector_buf);
+                    DBG_PRINTLNS("write_dir_entry: wrote entry, returning");
+                    return ok;
                 }
             }
         }
+        DBG_PRINTLNS("write_dir_entry: no free slot in this cluster, checking next");
         uint32_t next = fat_get_next_cluster(cluster);
         if (next >= 0x0FFFFFF8) {
-            // Extend directory with a new cluster
+            DBG_PRINTLNS("write_dir_entry: extending directory with new cluster");
             uint32_t new_cluster = fat_alloc_cluster();
             if (!new_cluster) return false;
             fat_set_next_cluster(cluster, new_cluster);
             cluster_zero(new_cluster);
             cluster = new_cluster;
+            DBG_PRINTLNS("write_dir_entry: directory extended");
         } else {
             cluster = next;
         }
     }
+    DBG_PRINTLNS("write_dir_entry: exhausted chain without finding a slot");
     return false;
 }
 
@@ -454,12 +470,16 @@ static void fat_free_chain(uint32_t cluster) {
 
 bool fat32_create_file(const char* path) {
     if (!initialized) return false;
+    DBG_PRINTLNS("fat32_create_file: start");
     uint32_t parent; char filename[FAT32_MAX_FILENAME];
     if (!split_path(path, &parent, filename)) return false;
+    DBG_PRINTLNS("fat32_create_file: split_path ok");
 
     uint32_t cluster = fat_alloc_cluster();
     if (!cluster) return false;
+    DBG_PRINTLNS("fat32_create_file: fat_alloc_cluster ok");
     cluster_zero(cluster);
+    DBG_PRINTLNS("fat32_create_file: cluster_zero ok");
 
     FAT32DirEntry entry = {0};
     make_83_name(filename, entry.name, entry.ext);
@@ -468,17 +488,24 @@ bool fat32_create_file(const char* path) {
     entry.cluster_low  = (uint16_t)(cluster & 0xFFFF);
     entry.size         = 0;
 
-    return write_dir_entry(parent, &entry);
+    DBG_PRINTLNS("fat32_create_file: calling write_dir_entry");
+    bool result = write_dir_entry(parent, &entry);
+    DBG_PRINTLNS("fat32_create_file: write_dir_entry returned, done");
+    return result;
 }
 
 bool fat32_create_dir(const char* path) {
     if (!initialized) return false;
+    DBG_PRINTLNS("fat32_create_dir: start");
     uint32_t parent; char dirname[FAT32_MAX_FILENAME];
     if (!split_path(path, &parent, dirname)) return false;
+    DBG_PRINTLNS("fat32_create_dir: split_path ok");
 
     uint32_t cluster = fat_alloc_cluster();
     if (!cluster) return false;
+    DBG_PRINTLNS("fat32_create_dir: fat_alloc_cluster ok");
     cluster_zero(cluster);
+    DBG_PRINTLNS("fat32_create_dir: cluster_zero ok");
 
     // Write . and .. entries
     uint32_t lba = cluster_to_lba(cluster);
@@ -505,6 +532,7 @@ bool fat32_create_dir(const char* path) {
     entries[1].size        = 0;
 
     if (!ata_write_sector(lba, sector_buf)) return false;
+    DBG_PRINTLNS("fat32_create_dir: wrote . and .. entries");
 
     // Write entry in parent
     FAT32DirEntry entry = {0};
@@ -514,7 +542,10 @@ bool fat32_create_dir(const char* path) {
     entry.cluster_low  = (uint16_t)(cluster & 0xFFFF);
     entry.size         = 0;
 
-    return write_dir_entry(parent, &entry);
+    DBG_PRINTLNS("fat32_create_dir: calling write_dir_entry");
+    bool result = write_dir_entry(parent, &entry);
+    DBG_PRINTLNS("fat32_create_dir: write_dir_entry returned, done");
+    return result;
 }
 
 bool fat32_write_file(const char* path, const uint8_t* buffer, uint32_t size) {
@@ -583,23 +614,31 @@ bool fat32_rename(const char* path, const char* new_name) {
 
 bool fat32_copy_file(const char* src, const char* dest) {
     if (!initialized) return false;
+    DBG_PRINTLNS("fat32_copy_file: start");
 
     uint32_t cluster; bool is_dir; uint32_t size;
     if (!resolve_path(src, &cluster, &is_dir, &size)) return false;
     if (is_dir) return false;
+    DBG_PRINTLNS("fat32_copy_file: resolved src");
 
     // Read source into a temporary buffer
     // Note: for large files you'd want chunked copying
     uint8_t* buf = (uint8_t*)0x600000; // temp buffer above LSE load address
     if (!fat32_read_file(src, buf, &size)) return false;
+    DBG_PRINTLNS("fat32_copy_file: read src into temp buffer");
 
     if (!fat32_create_file(dest)) return false;
-    return fat32_write_file(dest, buf, size);
+    DBG_PRINTLNS("fat32_copy_file: created dest, writing");
+    bool result = fat32_write_file(dest, buf, size);
+    DBG_PRINTLNS("fat32_copy_file: write_file returned, done");
+    return result;
 }
 
 bool fat32_move_file(const char* src, const char* dest) {
     if (!initialized) return false;
+    DBG_PRINTLNS("fat32_move_file: start");
     if (!fat32_copy_file(src, dest)) return false;
+    DBG_PRINTLNS("fat32_move_file: copy ok, deleting src");
     return fat32_delete_file(src);
 }
 

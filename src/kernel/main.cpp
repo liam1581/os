@@ -15,7 +15,7 @@ Commands commands;
 void cpp_main() {
     clear_screen();
     print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
-    println("Welcome to our 64-bit kernel!\n");
+    println("Welcome to CustomOS\n");
 
     print_set_color(PRINT_COLOR_LIGHT_GRAY, PRINT_COLOR_BLACK);
     print("Memory: ");
@@ -28,8 +28,8 @@ void cpp_main() {
     println(" MiB used\n");
     print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
 
-    cmd_atapi_init(ArgumentObject(NULL, nullptr));
-    cmd_fat_init(ArgumentObject(NULL, nullptr));
+    cmd_atapi_init(NullArgument);
+    cmd_fat_init(NullArgument);
 
     commands.registerCommands();
 

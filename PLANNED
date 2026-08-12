@@ -4,5 +4,7 @@ Planned for future versions:
     make the SeaShell (csh) work
     add a Picture Rendering mode (uncompressed images)
         - maybe png/jpg images at some point too
+    
+    make the os be installable to the fat32 drive
 
     (SOON) make programs on C and D drive (C and D directory in src/programs)

@@ -1,3 +1,11 @@
+2.3:
+    - Changed welcome message in main.cpp
+    - Added NullArgument define for empty ArgumentObject
+    - Made Commands::add function's code that actually adds the commands to the list
+    - Fixed the rest of the FAT32 commands (FINALLY)
+    - Made all c++ enums type safe (enum class instead of just enum)
+    - Added back the hw.lhe to the fat32 disk's root directory
+
 2.2:
     - Added help message for TESTING command
 

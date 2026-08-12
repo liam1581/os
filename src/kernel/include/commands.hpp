@@ -10,7 +10,9 @@ extern "C" {
 #define MAX_ARGUMENTS 16
 #define MAX_ARGUMENT_BUFFER 1024
 
-enum ArgumentType {
+#define NullArgument ArgumentObject(NULL, nullptr)
+
+enum class ArgumentType {
     ARG_INT,
     ARG_FLOAT,
     ARG_BOOL,
@@ -37,11 +39,11 @@ public:
     struct Command {
         const char* name;
         int argCount;
-        int (*func)(ArgumentObject);
-        const char* helpMessage;
+        int (*func)(ArgumentObject) = nullptr;
+        const char* helpMessage = nullptr;
 
-        Argument arguments[MAX_ARGUMENTS];
-        int argumentCount;
+        Argument arguments[MAX_ARGUMENTS] = {};
+        int argumentCount = 0;
     };
 
     void add(const char* commandName, int argCount);
@@ -65,13 +67,13 @@ public:
             bool typeKnown = true;
 
             if constexpr (__is_same(T, int)) {
-                type = ARG_INT;
+                type = ArgumentType::ARG_INT;
             } else if constexpr (__is_same(T, float)) {
-                type = ARG_FLOAT;
+                type = ArgumentType::ARG_FLOAT;
             } else if constexpr (__is_same(T, bool)) {
-                type = ARG_BOOL;
+                type = ArgumentType::ARG_BOOL;
             } else if constexpr (__is_same(T, const char*)) {
-                type = ARG_STRING;
+                type = ArgumentType::ARG_STRING;
             } else {
                 typeKnown = false;
             }

@@ -59,7 +59,12 @@ program_c_lse_files := $(patsubst src/programs/%.c, targets/x86_64/iso/programs/
 
 INCLUDES := -I src/libs/include -I src/libs/include/kapi -I src/kernel/include -I src/kernel/cpp/include -I src/csh/include -I src/kernel/TESTING/include
 
-CXXFLAGS := -std=c++17 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics
+KERNEL_SAFETY_FLAGS := -mno-red-zone -mno-mmx -mno-sse -mno-sse2
+
+CFLAGS := $(KERNEL_SAFETY_FLAGS)
+CXXFLAGS := -std=c++17 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics $(KERNEL_SAFETY_FLAGS)
+
+CXXFLAGS_SSE_OK := -std=c++17 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics -mno-red-zone
 
 # ----------------------------------------------------------------------------
 #  Per-variant object file lists (build/<variant>/...)
@@ -121,17 +126,19 @@ define COMPILE_RULES
 build/$(1)/kernel/%.o: src/kernel/%.c
 	@mkdir -p $$(dir $$@)
 	$$(call step,$(CYAN)$(BOLD) CC $(RESET) [$(1)],$$(patsubst build/$(1)/kernel/%.o, src/kernel/%.c, $$@))
-	@$$(CC) $$(DEFINES_$(1)) -c $$(INCLUDES) -ffreestanding $$(patsubst build/$(1)/kernel/%.o, src/kernel/%.c, $$@) -o $$@
+	@$$(CC) $$(DEFINES_$(1)) $$(CFLAGS) -c $$(INCLUDES) -ffreestanding $$(patsubst build/$(1)/kernel/%.o, src/kernel/%.c, $$@) -o $$@
 
 build/$(1)/kernel/%.o: src/kernel/%.cpp
 	@mkdir -p $$(dir $$@)
 	$$(call step,$(CYAN)$(BOLD)CXX $(RESET) [$(1)],$$(patsubst build/$(1)/kernel/%.o, src/kernel/%.cpp, $$@))
 	@$$(CXX) $$(DEFINES_$(1)) $$(CXXFLAGS) -c $$(INCLUDES) -ffreestanding $$(patsubst build/$(1)/kernel/%.o, src/kernel/%.cpp, $$@) -o $$@
 
+build/$(1)/kernel/commands.o: CXXFLAGS := $(CXXFLAGS_SSE_OK)
+
 build/$(1)/csh/%.o: src/csh/%.c
 	@mkdir -p $$(dir $$@)
 	$$(call step,$(CYAN)$(BOLD) CC $(RESET) [$(1)],$$(patsubst build/$(1)/csh/%.o, src/csh/%.c, $$@))
-	@$$(CC) $$(DEFINES_$(1)) -c $$(INCLUDES) -ffreestanding $$(patsubst build/$(1)/csh/%.o, src/csh/%.c, $$@) -o $$@
+	@$$(CC) $$(DEFINES_$(1)) $$(CFLAGS) -c $$(INCLUDES) -ffreestanding $$(patsubst build/$(1)/csh/%.o, src/csh/%.c, $$@) -o $$@
 
 build/$(1)/csh/%.o: src/csh/%.cpp
 	@mkdir -p $$(dir $$@)
@@ -141,7 +148,7 @@ build/$(1)/csh/%.o: src/csh/%.cpp
 build/$(1)/x86_64/%.o: src/x86_64/%.c
 	@mkdir -p $$(dir $$@)
 	$$(call step,$(CYAN)$(BOLD) CC $(RESET) [$(1)],$$(patsubst build/$(1)/x86_64/%.o, src/x86_64/%.c, $$@))
-	@$$(CC) $$(DEFINES_$(1)) -c $$(INCLUDES) -ffreestanding $$(patsubst build/$(1)/x86_64/%.o, src/x86_64/%.c, $$@) -o $$@
+	@$$(CC) $$(DEFINES_$(1)) $$(CFLAGS) -c $$(INCLUDES) -ffreestanding $$(patsubst build/$(1)/x86_64/%.o, src/x86_64/%.c, $$@) -o $$@
 
 build/$(1)/x86_64/%.o: src/x86_64/%.cpp
 	@mkdir -p $$(dir $$@)
@@ -156,7 +163,7 @@ build/$(1)/x86_64/%.o: src/x86_64/%.asm
 build/$(1)/libs/%.o: src/libs/src/%.c
 	@mkdir -p $$(dir $$@)
 	$$(call step,$(CYAN)$(BOLD) CC $(RESET) [$(1)],$$(patsubst build/$(1)/libs/%.o, src/libs/src/%.c, $$@))
-	@$$(CC) $$(DEFINES_$(1)) -c $$(INCLUDES) -ffreestanding $$(patsubst build/$(1)/libs/%.o, src/libs/src/%.c, $$@) -o $$@
+	@$$(CC) $$(DEFINES_$(1)) $$(CFLAGS) -c $$(INCLUDES) -ffreestanding $$(patsubst build/$(1)/libs/%.o, src/libs/src/%.c, $$@) -o $$@
 
 build/$(1)/libs/%.o: src/libs/src/%.cpp
 	@mkdir -p $$(dir $$@)
@@ -204,7 +211,7 @@ targets/x86_64/iso/programs/%.lhe: src/programs/%.c
 	@mkdir -p build/programs
 	$(eval STEM := $*)
 	$(call step,$(YELLOW)$(BOLD)LSE $(RESET),$(STEM).c)
-	@$(CC) $(DEFINES) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/programs/%.lhe, src/programs/%.c, $@) -o build/programs/$(STEM).o
+	@$(CC) $(DEFINES) $(CFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/programs/%.lhe, src/programs/%.c, $@) -o build/programs/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/$(STEM).elf build/programs/$(STEM).o
 	@$(OBJCP) -O binary build/programs/$(STEM).elf build/programs/$(STEM).bin
 	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x46,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
