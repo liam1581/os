@@ -38,5 +38,5 @@ SECTIONS {
     _kernel_end = .;
 
     /* Assert that the kernel never grows into the LHE load region */
-    ASSERT(_kernel_end < 0x400000, "Kernel too large, overlaps LHE load address!")
+    ASSERT(_kernel_end < 0x1000000, "Kernel too large, overlaps LHE load address!")
 }

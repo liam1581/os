@@ -1,7 +1,8 @@
 #pragma once
 #include "structs_and_enums/all.h"
 #include <stdint.h>
-#include <stddef.h>
+
+#include "fbprint.h"
 
 void clear_screen();
 void printc(char character);
@@ -14,8 +15,6 @@ void print_uint64_dec(uint64_t value);
 void print_uint64_hex(uint64_t value);
 void print_uint64_bin(uint64_t value);
 void delete_last_char();
-
-void printf(char* fmt, ...);
 
 void move_cursor(int row, int col);
 void move_cursor_up();

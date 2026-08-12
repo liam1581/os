@@ -1,3 +1,21 @@
+2.5:
+    - Added images directory to cd drive for image rendering
+        - Added minecraft's grass block side texture in bmp format for now
+    - Added framebuffer controlls for screen
+    - Made the screen size be 1024x768 (grub.cfg and main.asm)
+    - Added fbprint (framebuffer print) functions to each and every normal print function
+        - Only executes fbprint functions when the framebuffer is initialized
+    - [CURRENTLY] Adding fonts for better and working fbprints since defining every glyph is shit
+
+    - Gave qemu 16GB ram
+    - Specifically defined vga device for qemu
+    - Specifically defined modules for grub-mkrescue
+    - Moved LHE load addresses to start at 0x1000000    
+    
+    CURRENTLY ONLY IN TESTING KERNEL:
+        - Added BMP Header validation
+        - Added BMP Rendering (currently prod is broken)
+
 2.4:
     - Made src/programs have cd and fat directory for making programs for the cd or fat32 disk
         - All programs will be outputted (in lhe format) to targets/x86_64/(disk OR iso)/programs

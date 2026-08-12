@@ -20,7 +20,7 @@
 #include "drivers/power.h"
 #include "drivers/ps2.h"
 
-#define LHE_LOAD_ADDRESS 0x400000
+#define LHE_LOAD_ADDRESS 0x1000000
 
 static void* kapi_memset(void* ptr, uint8_t value, uint64_t size) {
     uint8_t* p = (uint8_t*)ptr;

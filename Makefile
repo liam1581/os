@@ -267,7 +267,7 @@ build: stepinit $(program_lhe_files) $(foreach v,$(VARIANTS),dist/x86_64/kernel_
 	@$(foreach v,$(VARIANTS),cp dist/x86_64/kernel_$(v).bin targets/x86_64/iso/boot/kernel_$(v).bin;)
 	@cp dist/x86_64/kernel_$(ISO_VARIANT).bin targets/x86_64/iso/boot/kernel.bin
 	@printf "$(DIM)[  --]$(RESET) $(MAGENTA)$(BOLD) ISO$(RESET) $(DIM)dist/x86_64/kernel_$(VERSION).iso$(RESET)\n"
-	@grub-mkrescue /usr/lib/grub/i386-pc -o dist/x86_64/kernel_$(VERSION).iso targets/x86_64/iso > /dev/null 2>&1
+	@grub-mkrescue /usr/lib/grub/i386-pc --modules="normal multiboot2 all_video video video_bochs gfxterm" -o dist/x86_64/kernel_$(VERSION).iso targets/x86_64/iso > /dev/null 2>&1
 	@cp dist/x86_64/kernel_$(VERSION).iso vault/
 	@next=$$(($(BN) + 1)); echo $$next > buildInfo/bn;
 	@rm -f $(STEP_FILE)
@@ -311,8 +311,9 @@ run:
 	@qemu-system-x86_64 \
 		-drive file=targets/x86_64/disk.img,format=raw,if=ide,index=0,media=disk \
 		-drive file=dist/x86_64/kernel_$(VERSION).iso,format=raw,if=ide,index=2,media=cdrom \
-		-m 12G \
+		-m 16G \
 		-boot d \
+		-vga std \
 		-serial tcp:127.0.0.1:1234,server &
 	@sleep 1
 	@/mnt/c/Program\ Files/PuTTY/putty.exe -raw 127.0.0.1 -P 1234

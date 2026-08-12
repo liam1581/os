@@ -14,5 +14,6 @@ long_mode_start:
     mov gs, ax
 
     mov edi, [mb_info_ptr]
+    xor rsi, rsi
 	call kernel_main
     hlt

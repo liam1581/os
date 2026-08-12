@@ -1,5 +1,7 @@
 #include "krnl.h"
+
 #include "print.h"
+#include "framebuffer.h"
 
 void KERNEL_PANIC(const char* filename, const char* error, int cls) {
     if (cls == 1) { clear_screen(); }
@@ -8,5 +10,6 @@ void KERNEL_PANIC(const char* filename, const char* error, int cls) {
     print(filename);
     println("\"!");
     println(error);
+    
     while (1);
 }

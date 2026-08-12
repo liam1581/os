@@ -1,6 +1,10 @@
 #include "print.h"
+#include "framebuffer.h"
+#include "fbprint.h"
 #include "bool.h"
 #include "x86_64/port.h"
+
+#include <stddef.h>
 
 #define VGA_CTRL_PORT 0x3D4
 #define VGA_DATA_PORT 0x3D5
@@ -18,7 +22,7 @@ size_t col = 0;
 size_t row = 0;
 uint8_t color = PRINT_COLOR_WHITE | PRINT_COLOR_BLACK << 4;
 
-void clear_row(size_t row) {
+void clear_row(size_t row) {  
     struct Char empty = (struct Char) {
         character: ' ',
         color: color,
@@ -30,6 +34,11 @@ void clear_row(size_t row) {
 }
 
 void clear_screen() {
+    if (framebuffer_is_available()) {
+        fbclear();
+        return;
+    }
+
     for (size_t i = 0; i < NUM_ROWS; i++) {
         clear_row(i);
     }
@@ -57,6 +66,11 @@ static int cursor_row = 0;
 static int cursor_col = 0;
 
 void printc(char character) {
+    if (framebuffer_is_available()) {
+        fbprintc(character);
+        return;
+    }
+
     if (character == '\n') {
         print_newline();
         cursor_col = 0;
@@ -90,18 +104,11 @@ void printc(char character) {
 }
 
 void print(const char* str) {
-    for (size_t i = 0; 1; i++) {
-        char character = (uint8_t) str[i];
-
-        if (character == '\0') {
-            return;
-        }
-
-        printc(character);
+    if (framebuffer_is_available()) {
+        fbprint(str);
+        return;
     }
-}
 
-void print_constant(const char* str) {
     for (size_t i = 0; 1; i++) {
         char character = (uint8_t) str[i];
 
@@ -114,15 +121,30 @@ void print_constant(const char* str) {
 }
 
 void println(const char* str) {
+    if (framebuffer_is_available()) {
+        fbprintln(str);
+        return;
+    }
+
     print(str);
     printc('\n');
 }
 
 void print_set_color(uint8_t foreground, uint8_t background) {
+    if (framebuffer_is_available()) {
+        fbprint_set_color(foreground, background);
+        return;
+    }
+
     color = foreground + (background << 4);
 }
 
 void print_uint64_dec(uint64_t value) {
+    if (framebuffer_is_available()) {
+        fbprint_uint64_dec(value);
+        return;
+    }
+
     if (value == 0) {
         printc('0');
         return;
@@ -142,6 +164,11 @@ void print_uint64_dec(uint64_t value) {
 }
 
 void print_uint64_hex(uint64_t value) {
+    if (framebuffer_is_available()) {
+        fbprint_uint64_hex(value);
+        return;
+    }
+
     if (value == 0) {
         printc('0');
         return;
@@ -168,6 +195,11 @@ void print_uint64_hex(uint64_t value) {
 }
 
 void print_uint64_bin(uint64_t value) {
+    if (framebuffer_is_available()) {
+        fbprint_uint64_bin(value);
+        return;
+    }
+
     char buffer[64];
     
     for (size_t i = 0; i < 64; i++) {
@@ -181,6 +213,11 @@ void print_uint64_bin(uint64_t value) {
 }
 
 void delete_last_char() {
+    if (framebuffer_is_available()) {
+        fbdelete_last_char();
+        return;
+    }
+
     if (cursor_row == 0 && cursor_col == 0) return;
 
     if (cursor_col > 0) {
@@ -210,6 +247,11 @@ void delete_last_char() {
 }
 
 void move_cursor(int row, int col) {
+    if (framebuffer_is_available()) {
+        fbmove_cursor(row, col);
+        return;
+    }
+
     uint16_t pos = row * NUM_COLS + col;
     port_outb(VGA_CTRL_PORT, 0x0F);
     port_outb(VGA_DATA_PORT, (uint8_t) (pos & 0xFF));
@@ -219,6 +261,11 @@ void move_cursor(int row, int col) {
 }
 
 void move_cursor_up() {
+    if (framebuffer_is_available()) {
+        move_cursor_up();
+        return;
+    }
+
     if (cursor_row == 0) return; // already at top
     cursor_row--;
     row--;
@@ -239,6 +286,11 @@ void move_cursor_up() {
 }
 
 void move_cursor_down() {
+    if (framebuffer_is_available()) {
+        fbmove_cursor_down();
+        return;
+    }
+
     if (cursor_row >= NUM_ROWS - 1) return; // already at bottom
     cursor_row++;
     row++;
@@ -259,6 +311,11 @@ void move_cursor_down() {
 }
 
 void move_cursor_left() {
+    if (framebuffer_is_available()) {
+        fbmove_cursor_left();
+        return;
+    }
+
     if (cursor_col == 0 && cursor_row == 0) return; // already at very start
 
     if (cursor_col > 0) {
@@ -282,6 +339,11 @@ void move_cursor_left() {
 }
 
 void move_cursor_right() {
+    if (framebuffer_is_available()) {
+        fbmove_cursor_right();
+        return;
+    }
+
     // Find end of current line
     int last_col = 0;
     for (int i = 0; i < NUM_COLS; i++) {
@@ -305,6 +367,11 @@ void move_cursor_right() {
 }
 
 void move_cursor_to_start() {
+    if (framebuffer_is_available()) {
+        fbmove_cursor_to_start();
+        return;
+    }
+
     cursor_row = 0;
     cursor_col = 0;
     row = 0;

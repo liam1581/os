@@ -19,7 +19,7 @@ void kernel_main(uint64_t multiboot_info_addr) {
 #endif
 #ifdef TESTING
 #include "testing.h"
-    kernel_testing();
+    kernel_testing(multiboot_info_addr);
 #endif
 #ifdef KERNELPANIC
     KERNEL_PANIC("entrypoint.c", "KERNEL PANIC CAUSED BY USER\nSELECT PRODUCTION OR TESTING KERNEL IN GRUB", 1);
