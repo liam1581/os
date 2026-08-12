@@ -6,5 +6,9 @@ Planned for future versions:
         - maybe png/jpg images at some point too
     
     make the os be installable to the fat32 drive
+    
+    exFAT and NTFS drivers
+    
+    maybe add some games?
 
     (SOON) make programs on C and D drive (C and D directory in src/programs)
