@@ -1,10 +1,11 @@
-LFH (standing for "Liam Font Header") is 9 bytes long and consists of the following data types and values:
+LFH (standing for "Liam Font Header") is 10 bytes long and consists of the following data types and values:
 
 uint8_t headerStart     = 0xFF
 uint32_t signature      = "LFH" + 0x00
 uint8_t fontWidth       = 0x05
 uint8_t fontHeight      = 0x07
 uint8_t fontChars       = 0x5F
+uint8_t isExtendedAscii = 0x00
 uint8_t headerEnd       = 0xFF
 
-(this describes a font with 95/0x5F characters and a 5x7 size since the os doesnt support more/less yet)
+(this describes a font with 95/0x5F characters and a 5x7 size since the os doesnt support more/less yet, with extended ascii turned on)

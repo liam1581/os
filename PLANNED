@@ -4,10 +4,10 @@ Planned for future versions:
     make the os be installable to the fat32 drive
     exFAT and NTFS drivers
     
-    add extended ascii alphabet to font and fbprint etc
-    
     maybe add some games?
 
 VEEEEEERY not soon:
+    make a script for changing/making a lfh file
+    
     make a mouse input work
     make gui

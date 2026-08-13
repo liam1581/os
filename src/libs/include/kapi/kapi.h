@@ -57,7 +57,7 @@ typedef struct {
     bool (*keyboard_is_down)(uint16_t code);
     bool (*keyboard_is_up)(uint16_t code);
 
-    char (*keycode_to_ascii_ext)(uint16_t code, bool shift_pressed, bool altgr_pressed);
+    uint8_t (*keycode_to_ascii_ext)(uint16_t code, bool shift_pressed, bool altgr_pressed);
 
     // RTC
     uint8_t (*rtc_seconds)();

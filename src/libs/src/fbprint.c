@@ -144,9 +144,9 @@ void fbprint_set_color(uint8_t foreground, uint8_t background)
  * ============================================================
  */
 
-uint8_t glyphs[95][7];
+uint8_t glyphs[218][7];
 
-static const uint8_t* get_glyph(char c)
+static const uint8_t* get_glyph(uint8_t c)
 {
     switch (c) {
         case ' ': return glyphs[0];
@@ -252,6 +252,130 @@ static const uint8_t* get_glyph(char c)
         case '}': return glyphs[67];
         case '~': return glyphs[68];
 
+        case 0x80: return glyphs[95];  // €
+        case 0x82: return glyphs[96];  // ‚
+        case 0x83: return glyphs[97];  // ƒ
+        case 0x84: return glyphs[98];  // „
+        case 0x85: return glyphs[99];  // …
+        case 0x86: return glyphs[100]; // †
+        case 0x87: return glyphs[101]; // ‡
+        case 0x88: return glyphs[102]; // ˆ
+        case 0x89: return glyphs[103]; // ‰
+        case 0x8A: return glyphs[104]; // Š
+        case 0x8B: return glyphs[105]; // ‹
+        case 0x8C: return glyphs[106]; // Œ
+        case 0x8E: return glyphs[107]; // Ž
+        case 0x91: return glyphs[108]; // ‘
+        case 0x92: return glyphs[109]; // ’
+        case 0x93: return glyphs[110]; // “
+        case 0x94: return glyphs[111]; // ”
+        case 0x95: return glyphs[112]; // •
+        case 0x96: return glyphs[113]; // –
+        case 0x97: return glyphs[114]; // —
+        case 0x98: return glyphs[115]; // ˜
+        case 0x99: return glyphs[116]; // ™
+        case 0x9A: return glyphs[117]; // š
+        case 0x9B: return glyphs[118]; // ›
+        case 0x9C: return glyphs[119]; // œ
+        case 0x9E: return glyphs[120]; // ž
+        case 0x9F: return glyphs[121]; // Ÿ
+        case 0xA0: return glyphs[122]; // Non-breaking Space
+        case 0xA1: return glyphs[123]; // ¡
+        case 0xA2: return glyphs[124]; // ¢
+        case 0xA3: return glyphs[125]; // £
+        case 0xA4: return glyphs[126]; // ¤
+        case 0xA5: return glyphs[127]; // ¥
+        case 0xA6: return glyphs[128]; // ¦
+        case 0xA7: return glyphs[129]; // §
+        case 0xA8: return glyphs[130]; // ¨
+        case 0xA9: return glyphs[131]; // ©
+        case 0xAA: return glyphs[132]; // ª
+        case 0xAB: return glyphs[133]; // «
+        case 0xAC: return glyphs[134]; // ¬
+        case 0xAD: return glyphs[135]; // Soft Hyphen
+        case 0xAE: return glyphs[136]; // ®
+        case 0xAF: return glyphs[137]; // ¯
+        case 0xB0: return glyphs[138]; // °
+        case 0xB1: return glyphs[139]; // ±
+        case 0xB2: return glyphs[140]; // ²
+        case 0xB3: return glyphs[141]; // ³
+        case 0xB4: return glyphs[142]; // ´
+        case 0xB5: return glyphs[143]; // µ
+        case 0xB6: return glyphs[144]; // ¶
+        case 0xB7: return glyphs[145]; // ·
+        case 0xB8: return glyphs[146]; // ¸
+        case 0xB9: return glyphs[147]; // ¹
+        case 0xBA: return glyphs[148]; // º
+        case 0xBB: return glyphs[149]; // »
+        case 0xBC: return glyphs[150]; // ¼
+        case 0xBD: return glyphs[151]; // ½
+        case 0xBE: return glyphs[152]; // ¾
+        case 0xBF: return glyphs[153]; // ¿
+        case 0xC0: return glyphs[154]; // À
+        case 0xC1: return glyphs[155]; // Á
+        case 0xC2: return glyphs[156]; // Â
+        case 0xC3: return glyphs[157]; // Ã
+        case 0xC4: return glyphs[158]; // Ä
+        case 0xC5: return glyphs[159]; // Å
+        case 0xC6: return glyphs[160]; // Æ
+        case 0xC7: return glyphs[161]; // Ç
+        case 0xC8: return glyphs[162]; // È
+        case 0xC9: return glyphs[163]; // É
+        case 0xCA: return glyphs[164]; // Ê
+        case 0xCB: return glyphs[165]; // Ë
+        case 0xCC: return glyphs[166]; // Ì
+        case 0xCD: return glyphs[167]; // Í
+        case 0xCE: return glyphs[168]; // Î
+        case 0xCF: return glyphs[169]; // Ï
+        case 0xD0: return glyphs[170]; // Ð
+        case 0xD1: return glyphs[171]; // Ñ
+        case 0xD2: return glyphs[172]; // Ò
+        case 0xD3: return glyphs[173]; // Ó
+        case 0xD4: return glyphs[174]; // Ô
+        case 0xD5: return glyphs[175]; // Õ
+        case 0xD6: return glyphs[176]; // Ö
+        case 0xD7: return glyphs[177]; // ×
+        case 0xD8: return glyphs[178]; // Ø
+        case 0xD9: return glyphs[179]; // Ù
+        case 0xDA: return glyphs[180]; // Ú
+        case 0xDB: return glyphs[181]; // Û
+        case 0xDC: return glyphs[182]; // Ü
+        case 0xDD: return glyphs[183]; // Ý
+        case 0xDE: return glyphs[184]; // Þ
+        case 0xDF: return glyphs[185]; // ß
+        case 0xE0: return glyphs[186]; // à
+        case 0xE1: return glyphs[187]; // á
+        case 0xE2: return glyphs[188]; // â
+        case 0xE3: return glyphs[189]; // ã
+        case 0xE4: return glyphs[190]; // ä
+        case 0xE5: return glyphs[191]; // å
+        case 0xE6: return glyphs[192]; // æ
+        case 0xE7: return glyphs[193]; // ç
+        case 0xE8: return glyphs[194]; // è
+        case 0xE9: return glyphs[195]; // é
+        case 0xEA: return glyphs[196]; // ê
+        case 0xEB: return glyphs[197]; // ë
+        case 0xEC: return glyphs[198]; // ì
+        case 0xED: return glyphs[199]; // í
+        case 0xEE: return glyphs[200]; // î
+        case 0xEF: return glyphs[201]; // ï
+        case 0xF0: return glyphs[202]; // ð
+        case 0xF1: return glyphs[203]; // ñ
+        case 0xF2: return glyphs[204]; // ò
+        case 0xF3: return glyphs[205]; // ó
+        case 0xF4: return glyphs[206]; // ô
+        case 0xF5: return glyphs[207]; // õ
+        case 0xF6: return glyphs[208]; // ö
+        case 0xF7: return glyphs[209]; // ÷
+        case 0xF8: return glyphs[210]; // ø
+        case 0xF9: return glyphs[211]; // ù
+        case 0xFA: return glyphs[212]; // ú
+        case 0xFB: return glyphs[213]; // û
+        case 0xFC: return glyphs[214]; // ü
+        case 0xFD: return glyphs[215]; // ý
+        case 0xFE: return glyphs[216]; // þ
+        case 0xFF: return glyphs[217]; // ÿ
+
         default:
             return glyphs[44];
     }
@@ -328,7 +452,7 @@ void fb_put_pixel(
 
 int fbprint_init(uint64_t multiboot_info_addr)
 {
-    uint8_t* fontBuffer = (uint8_t*)kmalloc(KIBIBYTE);
+    uint8_t* fontBuffer = (uint8_t*)kmalloc(1536);
     const char* fontPath = "/fonts/5x7.lfh";
     uint32_t fontFileSize;
 
@@ -336,7 +460,7 @@ int fbprint_init(uint64_t multiboot_info_addr)
     if (iso9660_read_file(fontPath, fontBuffer, &fontFileSize)) {
         if (validate_lfh_header(fontBuffer, fontFileSize, &fontHeader)) {
             uint8_t* glyphsOut = fontBuffer + sizeof(LFHHeader);
-            memcpy(glyphs, glyphsOut, 665);
+            memcpy(glyphs, glyphsOut, 1526);
         } else {
             KERNEL_PANIC("fbprint.c", "INVALID LFH FILE", 1);
         }
@@ -481,7 +605,7 @@ void fbclear(void)
  */
 
 static void draw_glyph(
-    char c,
+    uint8_t c,
     uint32_t x,
     uint32_t y
 )

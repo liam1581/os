@@ -52,7 +52,7 @@ void bmpTestingMain() {
     //     println("Read failed");
     // }
 
-    uint8_t *buffer = (uint8_t*)kmalloc(MEBIBYTE);
+    uint8_t *buffer = (uint8_t*)kmalloc(1536);
     const char* path = "/fonts/5x7.lfh";
     uint32_t outSize;
 
@@ -70,17 +70,8 @@ void bmpTestingMain() {
             print("Chars: ");
             print_uint64_dec(header.file.chars);
             printc('\n');
-
-            uint8_t* glyphsOut = buffer + sizeof(LFHFileHeader);
-            // uint8_t idk[665];
-            // memcpy(idk, glyphsOut, 665));
-            uint8_t glyphs[95][7];
-            memcpy(glyphs, glyphsOut, 665);
-
-            for (int i = 0; i<=7;i++) {
-                print_uint64_hex(glyphs[1][i]);
-                printc(' ');
-            }
+            print("With extended ascii turned ");
+            println(header.file.extAscii ? "on" : "off");
         } else {
             println("Invalid LFH");
         }

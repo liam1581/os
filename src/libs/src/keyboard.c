@@ -136,7 +136,7 @@ int keyboard_map[6][18] = {
     {0x1D, 0xE05D, 0x38, 0x29, 0xE038, 0x05D, 0x01D}
 };
 
-char keycode_to_ascii_ext(uint16_t code, bool shift_pressed, bool altgr_pressed) {
+uint8_t keycode_to_ascii_ext(uint16_t code, bool shift_pressed, bool altgr_pressed) {
 // #ifdef KEYBOARD_GERMAN
 //     const char* keyboard_layout = "german";
 // #endif
@@ -153,7 +153,7 @@ char keycode_to_ascii_ext(uint16_t code, bool shift_pressed, bool altgr_pressed)
         case KEY_CODE_B: return shift_pressed ? 'B' : 'b';
         case KEY_CODE_C: return shift_pressed ? 'C' : 'c';
         case KEY_CODE_D: return shift_pressed ? 'D' : 'd';
-        case KEY_CODE_E: return shift_pressed ? 'E' : 'e';
+        case KEY_CODE_E: return shift_pressed ? 'E' : altgr_pressed ? 0x80 : 'e';
         case KEY_CODE_F: return shift_pressed ? 'F' : 'f';
         case KEY_CODE_G: return shift_pressed ? 'G' : 'g';
         case KEY_CODE_H: return shift_pressed ? 'H' : 'h';
@@ -161,7 +161,7 @@ char keycode_to_ascii_ext(uint16_t code, bool shift_pressed, bool altgr_pressed)
         case KEY_CODE_J: return shift_pressed ? 'J' : 'j';
         case KEY_CODE_K: return shift_pressed ? 'K' : 'k';
         case KEY_CODE_L: return shift_pressed ? 'L' : 'l';
-        case KEY_CODE_M: return shift_pressed ? 'M' : 'm';
+        case KEY_CODE_M: return shift_pressed ? 'M' : altgr_pressed ? 0xB5 : 'm';
         case KEY_CODE_N: return shift_pressed ? 'N' : 'n';
         case KEY_CODE_O: return shift_pressed ? 'O' : 'o';
         case KEY_CODE_P: return shift_pressed ? 'P' : 'p';
@@ -176,15 +176,19 @@ char keycode_to_ascii_ext(uint16_t code, bool shift_pressed, bool altgr_pressed)
         case KEY_CODE_Y: return shift_pressed ? 'Y' : 'y';
         case KEY_CODE_Z: return shift_pressed ? 'Z' : 'z';
 
-        case KEY_CODE_ß: return shift_pressed ? '?' : altgr_pressed ? '\\' : 0x00;
+        case KEY_CODE_Ä: return shift_pressed ? 0xC4 : 0xE4;
+        case KEY_CODE_Ö: return shift_pressed ? 0xD6 : 0xF6;
+        case KEY_CODE_Ü: return shift_pressed ? 0xDC : 0xFC;
+
+        case KEY_CODE_ß: return shift_pressed ? '?' : altgr_pressed ? '\\' : 0xDF;
 
         case KEY_CODE_SPACE: return ' ';
         case KEY_CODE_ENTER: return '\n';
 
         case KEY_CODE_0: return shift_pressed ? '=' : altgr_pressed ? '}' : '0';
         case KEY_CODE_1: return shift_pressed ? '!' : '1';
-        case KEY_CODE_2: return shift_pressed ? '\"' : '2';
-        case KEY_CODE_3: return '3';
+        case KEY_CODE_2: return shift_pressed ? '\"' : altgr_pressed ? 0xB2 : '2';
+        case KEY_CODE_3: return shift_pressed ? 0xA7 : altgr_pressed ? 0xB3 : '3';
         case KEY_CODE_4: return shift_pressed ? '$' : '4';
         case KEY_CODE_5: return shift_pressed ? '%' : '5';
         case KEY_CODE_6: return shift_pressed ? '&' : '6';
@@ -192,8 +196,8 @@ char keycode_to_ascii_ext(uint16_t code, bool shift_pressed, bool altgr_pressed)
         case KEY_CODE_8: return shift_pressed ? '(' : altgr_pressed ? '[' : '8';
         case KEY_CODE_9: return shift_pressed ? ')' : altgr_pressed ? ']' : '9';
 
-        case KEY_CODE_UP_ARROW: return '^';
-        case KEY_CODE_ACUTE_ACCENT: return '`';
+        case KEY_CODE_UP_ARROW: return shift_pressed ? 0xB0 : '^';
+        case KEY_CODE_ACUTE_ACCENT: return shift_pressed ? 0xB5 : '`';
         case KEY_CODE_ARROW: return shift_pressed ? '>' : altgr_pressed ? '|' : '<';
         case KEY_CODE_PLUS: return shift_pressed ? '*' : altgr_pressed ? '~' : '+';
         case KEY_CODE_HASH: return shift_pressed ? '\'' : '#';
