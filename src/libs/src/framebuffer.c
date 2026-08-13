@@ -1,4 +1,4 @@
-#include "framebuffer.h"
+#include "video/framebuffer.h"
 
 #include "multiboot2.h"
 #include "debug.h"

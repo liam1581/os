@@ -428,7 +428,7 @@ void Commands::registerCommands() {
     helpMessage("fat.init", " - Initializes the FAT32 driver");
     helpMessage("ls", " - Does a directory listing");
     helpMessage("cat", " \"file\" - Prints out the file's content");
-    helpMessage("run", " \"file\" - Runs a LHE file");
+    helpMessage("run", " \"file\" - Runs a LEH file");
     helpMessage("cd", " \"directory\" - Changes directorys");
     helpMessage("cre.file", " \"file\" - Creates a file (C: drive only)");
     helpMessage("cre.dir", " \"directory\" - Creates a directory (C: drive only)");

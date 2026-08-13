@@ -2,7 +2,7 @@
 #include "structs_and_enums/all.h"
 #include <stdint.h>
 
-#include "fbprint.h"
+#include "video/fbprint.h"
 
 void clear_screen();
 void printc(char character);

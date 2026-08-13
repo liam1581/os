@@ -1,5 +1,5 @@
-#include "kheap.h"
-#include "pmm.h"
+#include "mem/kheap.h"
+#include "mem/pmm.h"
 
 #define ALIGNMENT  16
 #define GROW_PAGES 4 // grow the heap in 16KiB chunks when it runs out of space

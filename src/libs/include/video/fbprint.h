@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdint.h>
-//#include <stddef.h>
 
 #include "structs_and_enums/all.h"
 

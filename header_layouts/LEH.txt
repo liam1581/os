@@ -1,0 +1,11 @@
+LEH (standing for "Liam Executable Header") is 16 bytes long and consists of the following data types and values:
+
+uint8_t headerStart     = 0xFF
+uint32_t signature1     = "LSOS"
+uint16_t signature2     = "EH"
+uint16_t filler         = 0x0000
+uint8_t idk             = 0x03
+uint32_t filler         = 0x00000000
+uint8_t headerEnd       = 0xFF
+
+(yes the 0x03 is labled idk because i seriously dont remember... i made this header up at like 4am and i was tired)

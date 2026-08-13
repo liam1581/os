@@ -7,7 +7,7 @@
 
 extern "C" {
     #include "print.h"
-    #include "pmm.h"
+    #include "mem/mem.h"
 }
 
 Commands commands;

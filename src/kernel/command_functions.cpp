@@ -12,7 +12,7 @@ extern "C" {
     #include "drivers/power.h"
     
     #include "timer.h"
-    #include "lhe.h"
+    #include "leh.h"
 }
 
 #undef bool
@@ -372,7 +372,7 @@ int cmd_run(ArgumentObject args) {
     char path[2048];
     strcat_s(path, useFat ? FATcurrent_dir : current_dir, relative_filename);
 
-    int exec = lhe_exec_from(path, useFat);
+    int exec = leh_exec_from(path, useFat);
 
     if (exec != 1) {
         print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
@@ -494,66 +494,6 @@ int cmd_cd(ArgumentObject args) {
     baseDir[i] = '\0';
 
     currentDrive = requestedDrive;
-
-    return 0;
-}
-
-int cmd_fat_cat(ArgumentObject args) {
-    if (!fatInitialized) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("fat.cat: Drive not initialized. Run 'fat.init' first.");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
-
-    ArgumentValue fileArg = args.getArgument("file");
-    if (!fileArg.isValid()) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("fat.cat: missing file argument");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
-    const char* relative_filename = fileArg;
-
-    char filename[2048];
-    strcat_s(filename, FATcurrent_dir, relative_filename);
-
-    // Check if it's a directory by looking it up in the current dir listing
-    static struct FAT32Dir dir;
-    if (fat32_list_dir(FATcurrent_dir, &dir)) {
-        for (uint32_t i = 0; i < dir.count; i++) {
-            // compare name ignoring case
-            bool match = true;
-            for (size_t j = 0; ; j++) {
-                char a = dir.entries[i].name[j];
-                char b = relative_filename[j];
-                if (a >= 'A' && a <= 'Z') a += 32;
-                if (b >= 'A' && b <= 'Z') b += 32;
-                if (a != b) { match = false; break; }
-                if (a == '\0') break;
-            }
-            if (match && dir.entries[i].is_directory) {
-                print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-                println("fat.cat: cannot cat a directory");
-                print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-                return 1;
-            }
-        }
-    }
-
-    uint8_t file_buf[4096];
-    uint32_t file_size;
-    if (fat32_read_file(filename, file_buf, &file_size)) {
-        for (uint32_t i = 0; i < file_size; i++) {
-            printc((char)file_buf[i]);
-        }
-        printc('\n');
-    } else {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("fat.cat: file not found!");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
-        return 1;
-    }
 
     return 0;
 }

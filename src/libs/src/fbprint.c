@@ -1,5 +1,12 @@
-#include "fbprint.h"
+#include "video/fbprint.h"
 #include "multiboot2.h"
+
+#include "bool.h"
+#include "krnl.h"
+
+#include "mem/mem.h"
+#include "drivers/files/lfh.h"
+#include "drivers/iso9660.h"
 
 #include <stdarg.h>
 #include <stdint.h>
@@ -137,599 +144,116 @@ void fbprint_set_color(uint8_t foreground, uint8_t background)
  * ============================================================
  */
 
+uint8_t glyphs[95][7];
+
 static const uint8_t* get_glyph(char c)
 {
-    static const uint8_t space[7] = {
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00
-    };
-
-    static const uint8_t A[7] = {
-        0x0E, 0x11, 0x11, 0x1F,
-        0x11, 0x11, 0x11
-    };
-
-    static const uint8_t B[7] = {
-        0x1E, 0x11, 0x11, 0x1E,
-        0x11, 0x11, 0x1E
-    };
-
-    static const uint8_t C[7] = {
-        0x0F, 0x10, 0x10, 0x10,
-        0x10, 0x10, 0x0F
-    };
-
-    static const uint8_t D[7] = {
-        0x1E, 0x11, 0x11, 0x11,
-        0x11, 0x11, 0x1E
-    };
-
-    static const uint8_t E[7] = {
-        0x1F, 0x10, 0x10, 0x1E,
-        0x10, 0x10, 0x1F
-    };
-
-    static const uint8_t F[7] = {
-        0x1F, 0x10, 0x10, 0x1E,
-        0x10, 0x10, 0x10
-    };
-
-    static const uint8_t G[7] = {
-        0x0F, 0x10, 0x10, 0x17,
-        0x11, 0x11, 0x0F
-    };
-
-    static const uint8_t H[7] = {
-        0x11, 0x11, 0x11, 0x1F,
-        0x11, 0x11, 0x11
-    };
-
-    static const uint8_t I[7] = {
-        0x1F, 0x04, 0x04, 0x04,
-        0x04, 0x04, 0x1F
-    };
-
-    static const uint8_t J[7] = {
-        0x01, 0x01, 0x01, 0x01,
-        0x11, 0x11, 0x0E
-    };
-
-    static const uint8_t K[7] = {
-        0x11, 0x12, 0x14, 0x18,
-        0x14, 0x12, 0x11
-    };
-
-    static const uint8_t L[7] = {
-        0x10, 0x10, 0x10, 0x10,
-        0x10, 0x10, 0x1F
-    };
-
-    static const uint8_t M[7] = {
-        0x11, 0x1B, 0x15, 0x15,
-        0x11, 0x11, 0x11
-    };
-
-    static const uint8_t N[7] = {
-        0x11, 0x19, 0x15, 0x13,
-        0x11, 0x11, 0x11
-    };
-
-    static const uint8_t O[7] = {
-        0x0E, 0x11, 0x11, 0x11,
-        0x11, 0x11, 0x0E
-    };
-
-    static const uint8_t P[7] = {
-        0x1E, 0x11, 0x11, 0x1E,
-        0x10, 0x10, 0x10
-    };
-
-    static const uint8_t Q[7] = {
-        0x0E, 0x11, 0x11, 0x11,
-        0x15, 0x12, 0x0D
-    };
-
-    static const uint8_t R[7] = {
-        0x1E, 0x11, 0x11, 0x1E,
-        0x14, 0x12, 0x11
-    };
-
-    static const uint8_t S[7] = {
-        0x0F, 0x10, 0x10, 0x0E,
-        0x01, 0x01, 0x1E
-    };
-
-    static const uint8_t T[7] = {
-        0x1F, 0x04, 0x04, 0x04,
-        0x04, 0x04, 0x04
-    };
-
-    static const uint8_t U[7] = {
-        0x11, 0x11, 0x11, 0x11,
-        0x11, 0x11, 0x0E
-    };
-
-    static const uint8_t V[7] = {
-        0x11, 0x11, 0x11, 0x11,
-        0x11, 0x0A, 0x04
-    };
-
-    static const uint8_t W[7] = {
-        0x11, 0x11, 0x11, 0x15,
-        0x15, 0x1B, 0x11
-    };
-
-    static const uint8_t X[7] = {
-        0x11, 0x11, 0x0A, 0x04,
-        0x0A, 0x11, 0x11
-    };
-
-    static const uint8_t Y[7] = {
-        0x11, 0x11, 0x0A, 0x04,
-        0x04, 0x04, 0x04
-    };
-
-    static const uint8_t Z[7] = {
-        0x1F, 0x01, 0x02, 0x04,
-        0x08, 0x10, 0x1F
-    };
-
-    static const uint8_t zero[7] = {
-        0x0E, 0x11, 0x13, 0x15,
-        0x19, 0x11, 0x0E
-    };
-
-    static const uint8_t one[7] = {
-        0x04, 0x0C, 0x04, 0x04,
-        0x04, 0x04, 0x0E
-    };
-
-    static const uint8_t two[7] = {
-        0x0E, 0x11, 0x01, 0x02,
-        0x04, 0x08, 0x1F
-    };
-
-    static const uint8_t three[7] = {
-        0x1E, 0x01, 0x01, 0x0E,
-        0x01, 0x01, 0x1E
-    };
-
-    static const uint8_t four[7] = {
-        0x02, 0x06, 0x0A, 0x12,
-        0x1F, 0x02, 0x02
-    };
-
-    static const uint8_t five[7] = {
-        0x1F, 0x10, 0x10, 0x1E,
-        0x01, 0x01, 0x1E
-    };
-
-    static const uint8_t six[7] = {
-        0x0E, 0x10, 0x10, 0x1E,
-        0x11, 0x11, 0x0E
-    };
-
-    static const uint8_t seven[7] = {
-        0x1F, 0x01, 0x02, 0x04,
-        0x08, 0x08, 0x08
-    };
-
-    static const uint8_t eight[7] = {
-        0x0E, 0x11, 0x11, 0x0E,
-        0x11, 0x11, 0x0E
-    };
-
-    static const uint8_t nine[7] = {
-        0x0E, 0x11, 0x11, 0x0F,
-        0x01, 0x01, 0x0E
-    };
-
-    /* Existing punctuation */
-
-    static const uint8_t colon[7] = {
-        0x00, 0x04, 0x04, 0x00,
-        0x04, 0x04, 0x00
-    };
-
-    static const uint8_t period[7] = {
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x06, 0x06
-    };
-
-    static const uint8_t comma[7] = {
-        0x00, 0x00, 0x00, 0x00,
-        0x06, 0x04, 0x08
-    };
-
-    static const uint8_t exclamation[7] = {
-        0x04, 0x04, 0x04, 0x04,
-        0x04, 0x00, 0x04
-    };
-
-    static const uint8_t minus[7] = {
-        0x00, 0x00, 0x00, 0x1F,
-        0x00, 0x00, 0x00
-    };
-
-    static const uint8_t slash[7] = {
-        0x01, 0x01, 0x02, 0x04,
-        0x08, 0x10, 0x10
-    };
-
-    static const uint8_t underscore[7] = {
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x1F
-    };
-
-    static const uint8_t question[7] = {
-        0x0E, 0x11, 0x01, 0x02,
-        0x04, 0x00, 0x04
-    };
-
-    static const uint8_t backslash[7] = {
-        0x10, 0x10, 0x08, 0x04,
-        0x02, 0x01, 0x01
-    };
-
-    /* Missing printable punctuation */
-
-    static const uint8_t quote[7] = {
-        0x0A, 0x0A, 0x0A, 0x00,
-        0x00, 0x00, 0x00
-    };
-
-    static const uint8_t hash[7] = {
-        0x0A, 0x0A, 0x1F, 0x0A,
-        0x1F, 0x0A, 0x0A
-    };
-
-    static const uint8_t dollar[7] = {
-        0x04, 0x0F, 0x14, 0x0E,
-        0x05, 0x1E, 0x04
-    };
-
-    static const uint8_t percent[7] = {
-        0x19, 0x19, 0x02, 0x04,
-        0x08, 0x13, 0x13
-    };
-
-    static const uint8_t ampersand[7] = {
-        0x0C, 0x12, 0x12, 0x0C,
-        0x15, 0x12, 0x0D
-    };
-
-    static const uint8_t apostrophe[7] = {
-        0x04, 0x04, 0x08, 0x00,
-        0x00, 0x00, 0x00
-    };
-
-    static const uint8_t lparen[7] = {
-        0x02, 0x04, 0x08, 0x08,
-        0x08, 0x04, 0x02
-    };
-
-    static const uint8_t rparen[7] = {
-        0x08, 0x04, 0x02, 0x02,
-        0x02, 0x04, 0x08
-    };
-
-    static const uint8_t asterisk[7] = {
-        0x00, 0x04, 0x15, 0x0E,
-        0x15, 0x04, 0x00
-    };
-
-    static const uint8_t plus[7] = {
-        0x00, 0x04, 0x04, 0x1F,
-        0x04, 0x04, 0x00
-    };
-
-    static const uint8_t semicolon[7] = {
-        0x00, 0x06, 0x06, 0x00,
-        0x06, 0x04, 0x08
-    };
-
-    static const uint8_t less[7] = {
-        0x02, 0x04, 0x08, 0x10,
-        0x08, 0x04, 0x02
-    };
-
-    static const uint8_t equal[7] = {
-        0x00, 0x1F, 0x00, 0x1F,
-        0x00, 0x00, 0x00
-    };
-
-    static const uint8_t greater[7] = {
-        0x08, 0x04, 0x02, 0x01,
-        0x02, 0x04, 0x08
-    };
-
-    static const uint8_t at[7] = {
-        0x0E, 0x11, 0x17, 0x15,
-        0x17, 0x10, 0x0F
-    };
-
-    static const uint8_t lbracket[7] = {
-        0x0E, 0x08, 0x08, 0x08,
-        0x08, 0x08, 0x0E
-    };
-
-    static const uint8_t rbracket[7] = {
-        0x0E, 0x02, 0x02, 0x02,
-        0x02, 0x02, 0x0E
-    };
-
-    static const uint8_t caret[7] = {
-        0x04, 0x0A, 0x11, 0x00,
-        0x00, 0x00, 0x00
-    };
-
-    static const uint8_t backtick[7] = {
-        0x08, 0x04, 0x02, 0x00,
-        0x00, 0x00, 0x00
-    };
-
-    static const uint8_t lbrace[7] = {
-        0x02, 0x04, 0x04, 0x08,
-        0x04, 0x04, 0x02
-    };
-
-    static const uint8_t pipe[7] = {
-        0x04, 0x04, 0x04, 0x04,
-        0x04, 0x04, 0x04
-    };
-
-    static const uint8_t rbrace[7] = {
-        0x08, 0x04, 0x04, 0x02,
-        0x04, 0x04, 0x08
-    };
-
-    static const uint8_t tilde[7] = {
-        0x00, 0x00, 0x09, 0x16,
-        0x00, 0x00, 0x00
-    };
-
-    /*
-     * Lowercase letters.
-     * These use a lowercase x-height of rows 3-6 where appropriate.
-     */
-
-    static const uint8_t a[7] = {
-        0x00, 0x00, 0x0E, 0x01,
-        0x0F, 0x11, 0x0F
-    };
-
-    static const uint8_t b[7] = {
-        0x10, 0x10, 0x1E, 0x11,
-        0x11, 0x11, 0x1E
-    };
-
-    static const uint8_t cc[7] = {
-        0x00, 0x00, 0x0F, 0x10,
-        0x10, 0x10, 0x0F
-    };
-
-    static const uint8_t d[7] = {
-        0x01, 0x01, 0x0F, 0x11,
-        0x11, 0x11, 0x0F
-    };
-
-    static const uint8_t e[7] = {
-        0x00, 0x00, 0x0E, 0x11,
-        0x1F, 0x10, 0x0E
-    };
-
-    static const uint8_t f[7] = {
-        0x06, 0x09, 0x08, 0x1E,
-        0x08, 0x08, 0x08
-    };
-
-    static const uint8_t g[7] = {
-        0x00, 0x00, 0x0F, 0x11,
-        0x0F, 0x01, 0x1E
-    };
-
-    static const uint8_t h[7] = {
-        0x10, 0x10, 0x1E, 0x11,
-        0x11, 0x11, 0x11
-    };
-
-    static const uint8_t i[7] = {
-        0x04, 0x00, 0x0C, 0x04,
-        0x04, 0x04, 0x0E
-    };
-
-    static const uint8_t j[7] = {
-        0x02, 0x00, 0x06, 0x02,
-        0x02, 0x12, 0x0C
-    };
-
-    static const uint8_t k[7] = {
-        0x10, 0x10, 0x12, 0x14,
-        0x18, 0x14, 0x12
-    };
-
-    static const uint8_t l[7] = {
-        0x0C, 0x04, 0x04, 0x04,
-        0x04, 0x04, 0x0E
-    };
-
-    static const uint8_t m[7] = {
-        0x00, 0x00, 0x1A, 0x15,
-        0x15, 0x15, 0x15
-    };
-
-    static const uint8_t n[7] = {
-        0x00, 0x00, 0x1E, 0x11,
-        0x11, 0x11, 0x11
-    };
-
-    static const uint8_t o[7] = {
-        0x00, 0x00, 0x0E, 0x11,
-        0x11, 0x11, 0x0E
-    };
-
-    static const uint8_t p[7] = {
-        0x00, 0x00, 0x1E, 0x11,
-        0x1E, 0x10, 0x10
-    };
-
-    static const uint8_t q[7] = {
-        0x00, 0x00, 0x0F, 0x11,
-        0x0F, 0x01, 0x01
-    };
-
-    static const uint8_t r[7] = {
-        0x00, 0x00, 0x17, 0x18,
-        0x10, 0x10, 0x10
-    };
-
-    static const uint8_t s[7] = {
-        0x00, 0x00, 0x0F, 0x10,
-        0x0E, 0x01, 0x1E
-    };
-
-    static const uint8_t t[7] = {
-        0x08, 0x08, 0x1F, 0x08,
-        0x08, 0x09, 0x06
-    };
-
-    static const uint8_t u[7] = {
-        0x00, 0x00, 0x11, 0x11,
-        0x11, 0x13, 0x0D
-    };
-
-    static const uint8_t v[7] = {
-        0x00, 0x00, 0x11, 0x11,
-        0x11, 0x0A, 0x04
-    };
-
-    static const uint8_t w[7] = {
-        0x00, 0x00, 0x11, 0x15,
-        0x15, 0x1B, 0x11
-    };
-
-    static const uint8_t x[7] = {
-        0x00, 0x00, 0x11, 0x0A,
-        0x04, 0x0A, 0x11
-    };
-
-    static const uint8_t y[7] = {
-        0x00, 0x00, 0x11, 0x11,
-        0x0F, 0x01, 0x1E
-    };
-
-    static const uint8_t z[7] = {
-        0x00, 0x00, 0x1F, 0x02,
-        0x04, 0x08, 0x1F
-    };
-
-
     switch (c) {
-        case ' ': return space;
+        case ' ': return glyphs[0];
 
-        case 'A': return A;
-        case 'B': return B;
-        case 'C': return C;
-        case 'D': return D;
-        case 'E': return E;
-        case 'F': return F;
-        case 'G': return G;
-        case 'H': return H;
-        case 'I': return I;
-        case 'J': return J;
-        case 'K': return K;
-        case 'L': return L;
-        case 'M': return M;
-        case 'N': return N;
-        case 'O': return O;
-        case 'P': return P;
-        case 'Q': return Q;
-        case 'R': return R;
-        case 'S': return S;
-        case 'T': return T;
-        case 'U': return U;
-        case 'V': return V;
-        case 'W': return W;
-        case 'X': return X;
-        case 'Y': return Y;
-        case 'Z': return Z;
+        case 'A': return glyphs[1];
+        case 'B': return glyphs[2];
+        case 'C': return glyphs[3];
+        case 'D': return glyphs[4];
+        case 'E': return glyphs[5];
+        case 'F': return glyphs[6];
+        case 'G': return glyphs[7];
+        case 'H': return glyphs[8];
+        case 'I': return glyphs[9];
+        case 'J': return glyphs[10];
+        case 'K': return glyphs[11];
+        case 'L': return glyphs[12];
+        case 'M': return glyphs[13];
+        case 'N': return glyphs[14];
+        case 'O': return glyphs[15];
+        case 'P': return glyphs[16];
+        case 'Q': return glyphs[17];
+        case 'R': return glyphs[18];
+        case 'S': return glyphs[19];
+        case 'T': return glyphs[20];
+        case 'U': return glyphs[21];
+        case 'V': return glyphs[22];
+        case 'W': return glyphs[23];
+        case 'X': return glyphs[24];
+        case 'Y': return glyphs[25];
+        case 'Z': return glyphs[26];
 
-        case 'a': return a;
-        case 'b': return b;
-        case 'c': return cc;
-        case 'd': return d;
-        case 'e': return e;
-        case 'f': return f;
-        case 'g': return g;
-        case 'h': return h;
-        case 'i': return i;
-        case 'j': return j;
-        case 'k': return k;
-        case 'l': return l;
-        case 'm': return m;
-        case 'n': return n;
-        case 'o': return o;
-        case 'p': return p;
-        case 'q': return q;
-        case 'r': return r;
-        case 's': return s;
-        case 't': return t;
-        case 'u': return u;
-        case 'v': return v;
-        case 'w': return w;
-        case 'x': return x;
-        case 'y': return y;
-        case 'z': return z;
+        case 'a': return glyphs[69];
+        case 'b': return glyphs[70];
+        case 'c': return glyphs[71];
+        case 'd': return glyphs[72];
+        case 'e': return glyphs[73];
+        case 'f': return glyphs[74];
+        case 'g': return glyphs[75];
+        case 'h': return glyphs[76];
+        case 'i': return glyphs[77];
+        case 'j': return glyphs[78];
+        case 'k': return glyphs[79];
+        case 'l': return glyphs[80];
+        case 'm': return glyphs[81];
+        case 'n': return glyphs[82];
+        case 'o': return glyphs[83];
+        case 'p': return glyphs[84];
+        case 'q': return glyphs[85];
+        case 'r': return glyphs[86];
+        case 's': return glyphs[87];
+        case 't': return glyphs[88];
+        case 'u': return glyphs[89];
+        case 'v': return glyphs[90];
+        case 'w': return glyphs[91];
+        case 'x': return glyphs[92];
+        case 'y': return glyphs[93];
+        case 'z': return glyphs[94];
 
-        case '0': return zero;
-        case '1': return one;
-        case '2': return two;
-        case '3': return three;
-        case '4': return four;
-        case '5': return five;
-        case '6': return six;
-        case '7': return seven;
-        case '8': return eight;
-        case '9': return nine;
+        case '0': return glyphs[27];
+        case '1': return glyphs[28];
+        case '2': return glyphs[29];
+        case '3': return glyphs[30];
+        case '4': return glyphs[31];
+        case '5': return glyphs[32];
+        case '6': return glyphs[33];
+        case '7': return glyphs[34];
+        case '8': return glyphs[35];
+        case '9': return glyphs[36];
 
-        case '!': return exclamation;
-        case '"': return quote;
-        case '#': return hash;
-        case '$': return dollar;
-        case '%': return percent;
-        case '&': return ampersand;
-        case '\'': return apostrophe;
-        case '(': return lparen;
-        case ')': return rparen;
-        case '*': return asterisk;
-        case '+': return plus;
-        case ',': return comma;
-        case '-': return minus;
-        case '.': return period;
-        case '/': return slash;
+        case '!': return glyphs[40];
+        case '"': return glyphs[46];
+        case '#': return glyphs[47];
+        case '$': return glyphs[48];
+        case '%': return glyphs[49];
+        case '&': return glyphs[50];
+        case '\'': return glyphs[51];
+        case '(': return glyphs[52];
+        case ')': return glyphs[53];
+        case '*': return glyphs[54];
+        case '+': return glyphs[55];
+        case ',': return glyphs[39];
+        case '-': return glyphs[41];
+        case '.': return glyphs[38];
+        case '/': return glyphs[42];
 
-        case ':': return colon;
-        case ';': return semicolon;
-        case '<': return less;
-        case '=': return equal;
-        case '>': return greater;
-        case '?': return question;
-        case '@': return at;
+        case ':': return glyphs[37];
+        case ';': return glyphs[56];
+        case '<': return glyphs[57];
+        case '=': return glyphs[58];
+        case '>': return glyphs[59];
+        case '?': return glyphs[44];
+        case '@': return glyphs[60];
 
-        case '[': return lbracket;
-        case '\\': return backslash;
-        case ']': return rbracket;
-        case '^': return caret;
-        case '_': return underscore;
-        case '`': return backtick;
+        case '[': return glyphs[61];
+        case '\\': return glyphs[45];
+        case ']': return glyphs[62];
+        case '^': return glyphs[63];
+        case '_': return glyphs[43];
+        case '`': return glyphs[64];
 
-        case '{': return lbrace;
-        case '|': return pipe;
-        case '}': return rbrace;
-        case '~': return tilde;
+        case '{': return glyphs[65];
+        case '|': return glyphs[66];
+        case '}': return glyphs[67];
+        case '~': return glyphs[68];
 
         default:
-            return question;
+            return glyphs[44];
     }
 }
 
@@ -804,6 +328,22 @@ void fb_put_pixel(
 
 int fbprint_init(uint64_t multiboot_info_addr)
 {
+    uint8_t* fontBuffer = (uint8_t*)kmalloc(KIBIBYTE);
+    const char* fontPath = "/fonts/5x7.lfh";
+    uint32_t fontFileSize;
+
+    LFHHeader fontHeader;
+    if (iso9660_read_file(fontPath, fontBuffer, &fontFileSize)) {
+        if (validate_lfh_header(fontBuffer, fontFileSize, &fontHeader)) {
+            uint8_t* glyphsOut = fontBuffer + sizeof(LFHHeader);
+            memcpy(glyphs, glyphsOut, 665);
+        } else {
+            KERNEL_PANIC("fbprint.c", "INVALID LFH FILE", 1);
+        }
+    } else {
+        KERNEL_PANIC("fbprint.c", "FAILED TO READ LFH FILE", 1);
+    }
+
     uint8_t* base =
         (uint8_t*)(uintptr_t)multiboot_info_addr;
 
@@ -1039,14 +579,33 @@ static void fb_newline(void)
     cursor_row++;
     cursor_y += CHAR_HEIGHT;
 
-    if (cursor_row < FB_MAX_ROWS)
+    /*
+     * Scroll once the cursor would move past the last row that
+     * actually fits on screen at the current resolution -- not once
+     * it hits the logical text-buffer's storage capacity (FB_MAX_ROWS,
+     * which is just an upper bound on how much history we can track
+     * for backspace/cursor movement). FB_MAX_ROWS is typically much
+     * larger than what's visible, so comparing against it meant lines
+     * kept getting drawn below the bottom of the framebuffer (silently
+     * discarded by fb_put_pixel's bounds check) long before a scroll
+     * was ever triggered.
+     */
+    uint32_t visible_rows = framebuffer.height / CHAR_HEIGHT;
+
+    if (visible_rows == 0)
+        visible_rows = 1;
+
+    if (visible_rows > FB_MAX_ROWS)
+        visible_rows = FB_MAX_ROWS;
+
+    if (cursor_row < visible_rows)
         return;
 
     /*
-     * Scroll the logical character buffer.
+     * Scroll the logical character buffer, within the visible window.
      */
     for (uint32_t row = 1;
-         row < FB_MAX_ROWS;
+         row < visible_rows;
          row++) {
 
         for (uint32_t col = 0;
@@ -1062,10 +621,10 @@ static void fb_newline(void)
          col < FB_MAX_COLS;
          col++) {
 
-        text_buffer[FB_MAX_ROWS - 1][col] = ' ';
+        text_buffer[visible_rows - 1][col] = ' ';
     }
 
-    cursor_row = FB_MAX_ROWS - 1;
+    cursor_row = visible_rows - 1;
 
     /*
      * Scroll framebuffer upward by one character row.

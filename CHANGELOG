@@ -2,6 +2,21 @@
     - Fixed crashes
     - Fully implemented ASCII font
     - Fully working (almost) framebuffer thingy
+    - Added a ram_watchdog (causes KERNEL_PANIC once all the ram is used up)
+    - Fixed bug where the scren didn't scroll
+    - Moved some headers around
+        - Moved memory specific headers (kheap, pmm, ram_watchdog) to mem and included them in mem.h for easy access
+        - Moved framebuffer specific headers (fbprint, framebuffer) to video
+    - Changed programs to have LEH instead of LHE extension (changed program header too)
+    - Added LFH files (have to be created manually) which store font data
+    - Made file "drivers" (drivers/files) for validating file headers (currently bmp and lfh)
+        - Moved BMP validation function out of testing evironment to it's own header/c file
+    - (necessary for font rendering) Made the atapi/iso9660 drivers initialize in entrypoint
+        - Added c_commands.h/.cpp for that so the entrypoint.c has access to the cmd_atapi_init function from command_functions.cpp
+
+    - Added header_layouts directory where LEH and LFH are described in what data types and values they might have
+
+    - Fixed Makefile so it deletes the LEH programs too on make clean/clean_all
 
 2.5:
     - Added images directory to cd drive for image rendering

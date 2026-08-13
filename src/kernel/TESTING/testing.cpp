@@ -6,8 +6,9 @@
 
 extern "C" {
     #include "print.h"
-    #include "pmm.h"
-    #include "framebuffer.h"
+    #include "video/framebuffer.h"
+
+    #include "mem/mem.h"
 
     #include "krnl.h"
 
@@ -37,10 +38,10 @@ extern "C" void kernel_testing() {
     
     bmpTestingMain();
     
-    //print("> ");
+    print("> ");
     
-    //keyboard_init();
-    //keyboard_set_handler(testing_handle_input);
+    keyboard_init();
+    keyboard_set_handler(testing_handle_input);
 
     while (1);
 }

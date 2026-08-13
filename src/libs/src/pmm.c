@@ -1,4 +1,4 @@
-#include "pmm.h"
+#include "mem/pmm.h"
 #include "multiboot2.h"
 #include "debug.h"
 

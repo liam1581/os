@@ -1,23 +1,32 @@
-#include "cpp/cpp_support.h"
-
 #include <stdint.h>
 
-#include "framebuffer.h"
-#include "fbprint.h"
-#include "pmm.h"
-#include "kheap.h"
+#include "c_commands.h"
+
+#include "video/framebuffer.h"
+#include "video/fbprint.h"
+#include "mem/mem.h"
+#include "mem/ram_watchdog.h"
+#include "x86_64/idt.h"
+#include "cpp/cpp_support.h"
 
 #include "krnl.h"
 
 void kernel_main(uint64_t multiboot_info_addr) {
+    call_global_constructors();
+    
+    init_iso();
+    
+    pmm_init(multiboot_info_addr);
+    kheap_init();
+    
+    idt_init();
+    ram_watchdog_init();
+    
     if (!framebuffer_init(multiboot_info_addr))
         KERNEL_PANIC("entrypoint.c", "FAILED TO INITIALIZE FRAMEBUFFER", 1);
     if (!fbprint_init(multiboot_info_addr))
         KERNEL_PANIC("entrypoint.c", "FAILED TO INITIALIZE FB_PRINT", 1);
-    pmm_init(multiboot_info_addr);
-    kheap_init();
     
-    call_global_constructors();
     
 #ifdef PRODUCTION
 #include "main.h"
@@ -30,6 +39,5 @@ void kernel_main(uint64_t multiboot_info_addr) {
 #ifdef KERNELPANIC
     KERNEL_PANIC("entrypoint.c", "KERNEL PANIC CAUSED BY USER\nSELECT PRODUCTION OR TESTING KERNEL IN GRUB", 1);
 #endif
-
     KERNEL_PANIC("entrypoint.c", "NEITHER TESTING NOR PRODUCTION DEFINED", 1);
 }

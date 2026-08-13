@@ -2,7 +2,7 @@
 
 #include "print.h"
 #include "debug.h"
-#include "framebuffer.h"
+#include "video/framebuffer.h"
 
 void KERNEL_PANIC(const char* filename, const char* error, int cls) {
     if (cls == 1) { clear_screen(); }
@@ -12,7 +12,7 @@ void KERNEL_PANIC(const char* filename, const char* error, int cls) {
     println("\"!");
     println(error);
 
-    DBG_PRINTS("KERNEL PANIC IN\"");
+    DBG_PRINTS("KERNEL PANIC IN \"");
     DBG_PRINTS(filename);
     DBG_PRINTLNS("\"!");
     DBG_PRINTLNS(error);

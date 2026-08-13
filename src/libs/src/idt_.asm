@@ -1,4 +1,5 @@
 extern idt_handler_keyboard
+extern idt_handler_timer
 global idt_load
 
 idt_load:
@@ -49,3 +50,4 @@ idt_load:
 %endmacro
 
 WRAPPED_HANDLER idt_handler_keyboard
+WRAPPED_HANDLER idt_handler_timer

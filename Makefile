@@ -54,17 +54,17 @@ libs_asm_source_files := $(shell find src/libs/src -name *.asm)
 cd_program_c_source_files := $(shell find src/programs/cd -name *.c)
 fat_program_c_source_files := $(shell find src/programs/fat -name *.c)
 
-cd_program_c_lhe_files := $(patsubst src/programs/cd/%.c, targets/x86_64/iso/programs/%.lhe, $(cd_program_c_source_files))
-fat_program_c_lhe_files := $(patsubst src/programs/fat/%.c, targets/x86_64/disk/programs/%.lhe, $(fat_program_c_source_files))
+cd_program_c_leh_files := $(patsubst src/programs/cd/%.c, targets/x86_64/iso/programs/%.leh, $(cd_program_c_source_files))
+fat_program_c_leh_files := $(patsubst src/programs/fat/%.c, targets/x86_64/disk/programs/%.leh, $(fat_program_c_source_files))
 
 
 cd_program_cpp_source_files := $(shell find src/programs/cd -name *.cpp)
 fat_program_cpp_source_files := $(shell find src/programs/fat -name *.cpp)
 
-cd_program_cpp_lhe_files := $(patsubst src/programs/cd/%.cpp, targets/x86_64/iso/programs/%.lhe, $(cd_program_cpp_source_files))
-fat_program_cpp_lhe_files := $(patsubst src/programs/fat/%.cpp, targets/x86_64/disk/programs/%.lhe, $(fat_program_cpp_source_files))
+cd_program_cpp_leh_files := $(patsubst src/programs/cd/%.cpp, targets/x86_64/iso/programs/%.leh, $(cd_program_cpp_source_files))
+fat_program_cpp_leh_files := $(patsubst src/programs/fat/%.cpp, targets/x86_64/disk/programs/%.leh, $(fat_program_cpp_source_files))
 
-program_lhe_files := $(cd_program_c_lhe_files) $(fat_program_c_lhe_files) $(cd_program_cpp_lhe_files) $(fat_program_cpp_lhe_files)
+program_leh_files := $(cd_program_c_leh_files) $(fat_program_c_leh_files) $(cd_program_cpp_leh_files) $(fat_program_cpp_leh_files)
 
 
 INCLUDES := -I src/libs/include -I src/libs/include/kapi -I src/kernel/include -I src/kernel/cpp/include -I src/csh/include -I src/kernel/TESTING/include
@@ -118,7 +118,7 @@ STEP_FILE := build/.step
 
 # Total number of compile/assemble/link-program steps across the programs
 # AND all three kernel variants (used for the [n/N] counter)
-TOTAL_STEPS := $(words $(cd_program_c_lhe_files) $(fat_program_c_lhe_files) $(cd_program_cpp_lhe_files) $(fat_program_cpp_lhe_files) \
+TOTAL_STEPS := $(words $(cd_program_c_leh_files) $(fat_program_c_leh_files) $(cd_program_cpp_leh_files) $(fat_program_cpp_leh_files) \
 	$(foreach v,$(VARIANTS),$(kernel_object_files_$(v)) $(x86_64_object_files_$(v)) $(libs_object_files_$(v)) $(csh_object_files_$(v))))
 
 # $(call step,LABEL,TEXT) -- prints "[ n/N] LABEL  TEXT" and advances the counter
@@ -207,48 +207,48 @@ $(foreach v,$(VARIANTS),$(eval $(call COMPILE_RULES,$(v))))
 # ----------------------------------------------------------------------------
 #  Program (.lhe) rules — shared across all kernel variants
 # ----------------------------------------------------------------------------
-targets/x86_64/iso/programs/%.lhe: src/programs/cd/%.c
+targets/x86_64/iso/programs/%.leh: src/programs/cd/%.c
 	@mkdir -p $(dir $@)
 	@mkdir -p build/programs/cd
 	$(eval STEM := $*)
 	$(call step,$(YELLOW)$(BOLD)LHE $(RESET),$(STEM).c)
-	@$(CC) $(DEFINES) $(CFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/programs/%.lhe, src/programs/cd/%.c, $@) -o build/programs/cd/$(STEM).o
+	@$(CC) $(DEFINES) $(CFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/programs/%.leh, src/programs/cd/%.c, $@) -o build/programs/cd/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/cd/$(STEM).elf build/programs/cd/$(STEM).o
 	@$(OBJCP) -O binary build/programs/cd/$(STEM).elf build/programs/cd/$(STEM).bin
-	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x46,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
+	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x45,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
 	@cat build/programs/cd/$(STEM).bin >> $@
 
-targets/x86_64/disk/programs/%.lhe: src/programs/fat/%.c
+targets/x86_64/disk/programs/%.leh: src/programs/fat/%.c
 	@mkdir -p $(dir $@)
 	@mkdir -p build/programs/fat
 	$(eval STEM := $*)
 	$(call step,$(YELLOW)$(BOLD)LHE $(RESET),$(STEM).c)
-	@$(CC) $(DEFINES) $(CFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/disk/programs/%.lhe, src/programs/fat/%.c, $@) -o build/programs/fat/$(STEM).o
+	@$(CC) $(DEFINES) $(CFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/disk/programs/%.leh, src/programs/fat/%.c, $@) -o build/programs/fat/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/fat/$(STEM).elf build/programs/fat/$(STEM).o
 	@$(OBJCP) -O binary build/programs/fat/$(STEM).elf build/programs/fat/$(STEM).bin
-	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x46,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
+	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x45,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
 	@cat build/programs/fat/$(STEM).bin >> $@
 
-targets/x86_64/iso/programs/%.lhe: src/programs/cd/%.cpp
+targets/x86_64/iso/programs/%.leh: src/programs/cd/%.cpp
 	@mkdir -p $(dir $@)
 	@mkdir -p build/programs/cd
 	$(eval STEM := $*)
 	$(call step,$(YELLOW)$(BOLD)LHE $(RESET),$(STEM).cpp)
-	@$(CXX) $(DEFINES) $(CXXFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/programs/%.lhe, src/programs/cd/%.cpp, $@) -o build/programs/cd/$(STEM).o
+	@$(CXX) $(DEFINES) $(CXXFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/programs/%.leh, src/programs/cd/%.cpp, $@) -o build/programs/cd/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/cd/$(STEM).elf build/programs/cd/$(STEM).o
 	@$(OBJCP) -O binary build/programs/cd/$(STEM).elf build/programs/cd/$(STEM).bin
-	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x46,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
+	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x45,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
 	@cat build/programs/cd/$(STEM).bin >> $@
 
-targets/x86_64/disk/programs/%.lhe: src/programs/fat/%.cpp
+targets/x86_64/disk/programs/%.leh: src/programs/fat/%.cpp
 	@mkdir -p $(dir $@)
 	@mkdir -p build/programs/fat
 	$(eval STEM := $*)
 	$(call step,$(YELLOW)$(BOLD)LHE $(RESET),$(STEM).cpp)
-	@$(CXX) $(DEFINES) $(CXXFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/disk/programs/%.lhe, src/programs/fat/%.cpp, $@) -o build/programs/fat/$(STEM).o
+	@$(CXX) $(DEFINES) $(CXXFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/disk/programs/%.leh, src/programs/fat/%.cpp, $@) -o build/programs/fat/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/fat/$(STEM).elf build/programs/fat/$(STEM).o
 	@$(OBJCP) -O binary build/programs/fat/$(STEM).elf build/programs/fat/$(STEM).bin
-	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x46,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
+	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x45,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
 	@cat build/programs/fat/$(STEM).bin >> $@
 
 .PHONY: build clean clean_all run build_clean stepinit
@@ -262,7 +262,7 @@ stepinit:
 # Default build: produces all three kernel.bin files, copies each into
 # targets/x86_64/iso/boot/ (as kernel_<variant>.bin) so grub.cfg can offer a
 # boot menu entry per variant, then packages dist/x86_64/kernel.iso.
-build: stepinit $(program_lhe_files) $(foreach v,$(VARIANTS),dist/x86_64/kernel_$(v).bin)
+build: stepinit $(program_leh_files) $(foreach v,$(VARIANTS),dist/x86_64/kernel_$(v).bin)
 	@mkdir -p targets/x86_64/iso/boot
 	@$(foreach v,$(VARIANTS),cp dist/x86_64/kernel_$(v).bin targets/x86_64/iso/boot/kernel_$(v).bin;)
 	@cp dist/x86_64/kernel_$(ISO_VARIANT).bin targets/x86_64/iso/boot/kernel.bin
@@ -279,14 +279,14 @@ build: stepinit $(program_lhe_files) $(foreach v,$(VARIANTS),dist/x86_64/kernel_
 clean:
 	@printf "$(YELLOW)$(BOLD)[clean]$(RESET) removing build artifacts...\n"
 	@rm -rf build dist
-	@rm -rf targets/x86_64/iso/data/*.lhe targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
+	@rm -rf targets/x86_64/disk/programs/*.leh targets/x86_64/iso/programs/*.leh targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
 	@printf "$(GREEN)Clean complete$(RESET)\n"
 
 clean_all:
 	@printf "$(YELLOW)$(BOLD)[clean_all]$(RESET) removing ALL build artifacts...\n"
 	@rm -rf targets/x86_64/disk.img
 	@rm -rf build dist
-	@rm -rf targets/x86_64/iso/programs/*.lhe targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
+	@rm -rf targets/x86_64/disk/programs/*.leh targets/x86_64/iso/programs/*.leh targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
 	@printf "$(GREEN)Clean complete$(RESET)\n"
 
 build_clean:

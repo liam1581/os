@@ -1,4 +1,4 @@
-#include "lhe.h"
+#include "leh.h"
 
 #include "kapi/kapi.h"
 
@@ -20,7 +20,7 @@
 #include "drivers/power.h"
 #include "drivers/ps2.h"
 
-#define LHE_LOAD_ADDRESS 0x1000000
+#define LEH_LOAD_ADDRESS 0x1000000
 
 static void* kapi_memset(void* ptr, uint8_t value, uint64_t size) {
     uint8_t* p = (uint8_t*)ptr;
@@ -35,27 +35,27 @@ static void* kapi_memcpy(void* dest, const void* src, uint64_t size) {
     return dest;
 }
 
-static bool lhe_check_header(const uint8_t* header) {
-    return header[0] == LHE_MAGIC_0 &&
-           header[1] == LHE_MAGIC_1 &&
-           header[2] == LHE_MAGIC_2 &&
-           header[3] == LHE_MAGIC_3 &&
-           header[4] == LHE_MAGIC_4 &&
-           header[5] == LHE_MAGIC_5 &&
-           header[6] == LHE_MAGIC_6 &&
-           header[7] == LHE_MAGIC_7 &&
-           header[8] == LHE_MAGIC_8 &&
-           header[9] == LHE_MAGIC_9 &&
-           header[10] == LHE_MAGIC_A &&
-           header[11] == LHE_MAGIC_B &&
-           header[12] == LHE_MAGIC_C &&
-           header[13] == LHE_MAGIC_D &&
-           header[14] == LHE_MAGIC_E &&
-           header[15] == LHE_MAGIC_F;
+static bool leh_check_header(const uint8_t* header) {
+    return header[0] == LEH_MAGIC_0 &&
+           header[1] == LEH_MAGIC_1 &&
+           header[2] == LEH_MAGIC_2 &&
+           header[3] == LEH_MAGIC_3 &&
+           header[4] == LEH_MAGIC_4 &&
+           header[5] == LEH_MAGIC_5 &&
+           header[6] == LEH_MAGIC_6 &&
+           header[7] == LEH_MAGIC_7 &&
+           header[8] == LEH_MAGIC_8 &&
+           header[9] == LEH_MAGIC_9 &&
+           header[10] == LEH_MAGIC_A &&
+           header[11] == LEH_MAGIC_B &&
+           header[12] == LEH_MAGIC_C &&
+           header[13] == LEH_MAGIC_D &&
+           header[14] == LEH_MAGIC_E &&
+           header[15] == LEH_MAGIC_F;
 }
 
-int lhe_exec_from(const char* path, bool useFAT) {
-    uint8_t* load_addr = (uint8_t*)LHE_LOAD_ADDRESS;
+int leh_exec_from(const char* path, bool useFAT) {
+    uint8_t* load_addr = (uint8_t*)LEH_LOAD_ADDRESS;
 
     uint32_t file_size;
     bool read_ok = useFAT
@@ -64,8 +64,8 @@ int lhe_exec_from(const char* path, bool useFAT) {
     if (!read_ok) return -1;
 
     // Validate header
-    if (file_size <= LHE_HEADER_SIZE)  return -2;
-    if (!lhe_check_header(load_addr))  return -3;
+    if (file_size <= LEH_HEADER_SIZE)  return -2;
+    if (!leh_check_header(load_addr))  return -3;
 
     KernelAPI kapi;
     kapi.clear_screen = clear_screen;
@@ -98,7 +98,7 @@ int lhe_exec_from(const char* path, bool useFAT) {
     kapi.serial_read_byte = serial_read_byte;
     kapi.delay_s = delay_s;
     kapi.delay_min = delay_min;
-    kapi.lhe_exec = lhe_exec;
+    kapi.leh_exec = leh_exec;
     kapi.ps2_read_scan_code = ps2_read_scan_code;
     kapi.keyboard_init = keyboard_init;
     kapi.keyboard_set_handler = keyboard_set_handler;
@@ -138,12 +138,12 @@ int lhe_exec_from(const char* path, bool useFAT) {
     kapi.atapi_read_sector = atapi_read_sector;
 
     // Jump past the header to the first byte of code and call it as a function
-    void (*program_main)(KernelAPI*) = (void(*)(KernelAPI*))(load_addr + LHE_HEADER_SIZE);    
+    void (*program_main)(KernelAPI*) = (void(*)(KernelAPI*))(load_addr + LEH_HEADER_SIZE);    
     program_main(&kapi);
 
     return 1;
 }
 
-int lhe_exec(const char* path) {
-    return lhe_exec_from(path, false);
+int leh_exec(const char* path) {
+    return leh_exec_from(path, false);
 }

@@ -3,7 +3,7 @@
 #include "cpp/cpp_support.h"
 
 extern "C" {
-    #include "kheap.h"
+    #include "mem/kheap.h"
 }
 
 void* operator new(size_t size) {

@@ -46,7 +46,7 @@ typedef struct {
     void (*delay_min)(uint32_t min);
 
     // LHE
-    int (*lhe_exec)(const char* path);
+    int (*leh_exec)(const char* path);
 
     // PS2
     uint8_t (*ps2_read_scan_code)();
