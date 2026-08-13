@@ -1,4 +1,4 @@
-LEH (standing for "Liam Executable Header") is 16 bytes long and consists of the following data types and values:
+LEH (standing for "Liam's Executable Header") is 16 bytes long and consists of the following data types and values:
 
 uint8_t headerStart     = 0xFF
 uint32_t signature1     = "LSOS"
