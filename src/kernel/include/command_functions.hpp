@@ -20,6 +20,7 @@ int cmd_cre_dir(ArgumentObject args);
 int cmd_cp(ArgumentObject args);
 int cmd_mv(ArgumentObject args);
 int cmd_rm(ArgumentObject args);
+int cmd_display_mem(ArgumentObject);
 
 char* get_current_dir();
 char* get_fat_current_dir();

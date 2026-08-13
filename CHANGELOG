@@ -1,3 +1,9 @@
+2.8:
+    - Reworked the LEH Header and header validation etc to fit the other header validations
+    - Added leh.h to drivers/files
+    - Added display_mem command that displays memory usage
+    - Added back mc texture to testing mode for bmp renderer
+
 2.7:
     - Added extended ascii (according to Windows-1252) to font
     - Changed the LFH header to have a byte be able to say if font supports extended ascii (acording to Windows-1252) or not

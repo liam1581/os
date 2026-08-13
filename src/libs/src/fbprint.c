@@ -467,6 +467,7 @@ int fbprint_init(uint64_t multiboot_info_addr)
     } else {
         KERNEL_PANIC("fbprint.c", "FAILED TO READ LFH FILE", 1);
     }
+    kfree(fontBuffer);
 
     uint8_t* base =
         (uint8_t*)(uintptr_t)multiboot_info_addr;

@@ -11,8 +11,11 @@ extern "C" {
     #include "drivers/fat32.h"
     #include "drivers/power.h"
     
+    #include "drivers/files/leh.h"
+
+    #include "mem/mem.h"
+
     #include "timer.h"
-    #include "leh.h"
 }
 
 #undef bool
@@ -727,6 +730,21 @@ int cmd_rm(ArgumentObject args) {
         print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
         return 1;
     }
+
+    return 0;
+}
+
+int cmd_display_mem(ArgumentObject) {
+    print_set_color(PRINT_COLOR_LIGHT_GRAY, PRINT_COLOR_BLACK);
+    print("Memory: ");
+    print_uint64_dec(pmm_free_memory_bytes() / 1024 / 1024);
+    print(" / ");
+    print_uint64_dec(pmm_total_memory_bytes() / 1024 / 1024);
+    println(" MiB free");
+    print("        ");
+    print_uint64_dec((pmm_total_memory_bytes() - pmm_free_memory_bytes()) / 1024 / 1024);
+    println(" MiB used\n");
+    print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
 
     return 0;
 }

@@ -1,10 +1,11 @@
-#include "leh.h"
+#include "drivers/files/leh.h"
 
 #include "kapi/kapi.h"
 
 #include "print.h"
 #include "string.h"
 #include "timer.h"
+#include "bool.h"
 
 #include "x86_64/idt.h"
 #include "x86_64/pic.h"
@@ -35,23 +36,31 @@ static void* kapi_memcpy(void* dest, const void* src, uint64_t size) {
     return dest;
 }
 
-static bool leh_check_header(const uint8_t* header) {
-    return header[0] == LEH_MAGIC_0 &&
-           header[1] == LEH_MAGIC_1 &&
-           header[2] == LEH_MAGIC_2 &&
-           header[3] == LEH_MAGIC_3 &&
-           header[4] == LEH_MAGIC_4 &&
-           header[5] == LEH_MAGIC_5 &&
-           header[6] == LEH_MAGIC_6 &&
-           header[7] == LEH_MAGIC_7 &&
-           header[8] == LEH_MAGIC_8 &&
-           header[9] == LEH_MAGIC_9 &&
-           header[10] == LEH_MAGIC_A &&
-           header[11] == LEH_MAGIC_B &&
-           header[12] == LEH_MAGIC_C &&
-           header[13] == LEH_MAGIC_D &&
-           header[14] == LEH_MAGIC_E &&
-           header[15] == LEH_MAGIC_F;
+bool validate_leh_header(const uint8_t* data, uint32_t file_size, LEHHeader* header) {
+    if (data == NULL)
+        return false;
+
+    if (file_size < sizeof(LEHFileHeader))
+        return false;
+
+    memcpy(&header->file, data, sizeof(LEHHeader));
+
+    if (header->file.start != 0xFF)
+        return false;
+    
+    if (header->file.signature != 0x0048454C)
+        return false;
+
+    if (header->file.reserved1 != 0x00)
+        return false;
+
+    if (header->file.reserved2 != 0x00)
+        return false;
+
+    if (header->file.end != 0xFF)
+        return false;
+    
+    return true;
 }
 
 int leh_exec_from(const char* path, bool useFAT) {
@@ -63,9 +72,10 @@ int leh_exec_from(const char* path, bool useFAT) {
         : iso9660_read_file(path, load_addr, &file_size);
     if (!read_ok) return -1;
 
+    LEHHeader ExecutableHeader;
+
     // Validate header
-    if (file_size <= LEH_HEADER_SIZE)  return -2;
-    if (!leh_check_header(load_addr))  return -3;
+    if (!validate_leh_header(load_addr, file_size, &ExecutableHeader))  return -3;
 
     KernelAPI kapi;
     kapi.clear_screen = clear_screen;
@@ -138,7 +148,7 @@ int leh_exec_from(const char* path, bool useFAT) {
     kapi.atapi_read_sector = atapi_read_sector;
 
     // Jump past the header to the first byte of code and call it as a function
-    void (*program_main)(KernelAPI*) = (void(*)(KernelAPI*))(load_addr + LEH_HEADER_SIZE);    
+    void (*program_main)(KernelAPI*) = (void(*)(KernelAPI*))(load_addr + sizeof(LEHHeader));    
     program_main(&kapi);
 
     return 1;

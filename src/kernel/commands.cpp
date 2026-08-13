@@ -418,6 +418,9 @@ void Commands::registerCommands() {
     argument<const char*>("del", "file");
     executes("del", cmd_rm);
 
+    add("display_mem", 0);
+    executes("display_mem", cmd_display_mem);
+
     helpMessage("echo", " \"message\" - Prints a message!");
     helpMessage("cls", " - Clears the screen");
     helpMessage("reboot", " - Restart the Computer");
@@ -435,6 +438,7 @@ void Commands::registerCommands() {
     helpMessage("cp", " \"src\" \"destination\" - Copies a file (C: drive only)");
     helpMessage("mv", " \"src\" \"destination\" - Moves/renames a file (C: drive only)");
     helpMessage("rm", "/del \"file\" - Deletes a file (C: drive only)");
+    helpMessage("display_mem", " - displays memory usage");
     helpMessage("TESTING", " - Causes kernel panic because no function is defined");
 
     add("TESTING", 0);

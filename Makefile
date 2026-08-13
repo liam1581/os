@@ -215,7 +215,7 @@ targets/x86_64/iso/programs/%.leh: src/programs/cd/%.c
 	@$(CC) $(DEFINES) $(CFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/programs/%.leh, src/programs/cd/%.c, $@) -o build/programs/cd/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/cd/$(STEM).elf build/programs/cd/$(STEM).o
 	@$(OBJCP) -O binary build/programs/cd/$(STEM).elf build/programs/cd/$(STEM).bin
-	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x45,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
+	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF, 0x4C, 0x45, 0x48, 0x00, 0x00, 0x00, 0xFF]))" > $@
 	@cat build/programs/cd/$(STEM).bin >> $@
 
 targets/x86_64/disk/programs/%.leh: src/programs/fat/%.c
@@ -226,7 +226,7 @@ targets/x86_64/disk/programs/%.leh: src/programs/fat/%.c
 	@$(CC) $(DEFINES) $(CFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/disk/programs/%.leh, src/programs/fat/%.c, $@) -o build/programs/fat/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/fat/$(STEM).elf build/programs/fat/$(STEM).o
 	@$(OBJCP) -O binary build/programs/fat/$(STEM).elf build/programs/fat/$(STEM).bin
-	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x45,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
+	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF, 0x4C, 0x45, 0x48, 0x00, 0x00, 0x00, 0xFF]))" > $@
 	@cat build/programs/fat/$(STEM).bin >> $@
 
 targets/x86_64/iso/programs/%.leh: src/programs/cd/%.cpp
@@ -237,7 +237,7 @@ targets/x86_64/iso/programs/%.leh: src/programs/cd/%.cpp
 	@$(CXX) $(DEFINES) $(CXXFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/iso/programs/%.leh, src/programs/cd/%.cpp, $@) -o build/programs/cd/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/cd/$(STEM).elf build/programs/cd/$(STEM).o
 	@$(OBJCP) -O binary build/programs/cd/$(STEM).elf build/programs/cd/$(STEM).bin
-	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x45,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
+	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF, 0x4C, 0x45, 0x48, 0x00, 0x00, 0x00, 0xFF]))" > $@
 	@cat build/programs/cd/$(STEM).bin >> $@
 
 targets/x86_64/disk/programs/%.leh: src/programs/fat/%.cpp
@@ -248,7 +248,7 @@ targets/x86_64/disk/programs/%.leh: src/programs/fat/%.cpp
 	@$(CXX) $(DEFINES) $(CXXFLAGS) $(INCLUDES) -ffreestanding -nostdlib -fno-pie -fno-pic -fcf-protection=none -c $(patsubst targets/x86_64/disk/programs/%.leh, src/programs/fat/%.cpp, $@) -o build/programs/fat/$(STEM).o
 	@$(LD) -T src/programs/program.ld -o build/programs/fat/$(STEM).elf build/programs/fat/$(STEM).o
 	@$(OBJCP) -O binary build/programs/fat/$(STEM).elf build/programs/fat/$(STEM).bin
-	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF,0x4C,0x53,0x4F,0x53,0x45,0x48,0x00,0x00,0x00,0x03,0x00,0x00,0x00,0x00,0xFF]))" > $@
+	@python3 -c "import sys; sys.stdout.buffer.write(bytes([0xFF, 0x4C, 0x45, 0x48, 0x00, 0x00, 0x00, 0xFF]))" > $@
 	@cat build/programs/fat/$(STEM).bin >> $@
 
 .PHONY: build clean clean_all run build_clean stepinit
