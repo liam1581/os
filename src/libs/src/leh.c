@@ -1,4 +1,4 @@
-#include "drivers/files/leh.h"
+#include "drivers/files/os/leh.h"
 
 #include "kapi/kapi.h"
 
@@ -12,14 +12,14 @@
 #include "x86_64/port.h"
 #include "x86_64/rtc.h"
 
+#include "drivers/storage/iso9660.h"
+#include "drivers/storage/ata.h"
+#include "drivers/storage/atapi.h"
+#include "drivers/storage/fat32.h"
+#include "drivers/keyboard/keyboard.h"
+#include "drivers/keyboard/ps2.h"
 #include "drivers/serial.h"
-#include "drivers/iso9660.h"
-#include "drivers/ata.h"
-#include "drivers/atapi.h"
-#include "drivers/fat32.h"
-#include "drivers/keyboard.h"
 #include "drivers/power.h"
-#include "drivers/ps2.h"
 
 #define LEH_LOAD_ADDRESS 0x1000000
 

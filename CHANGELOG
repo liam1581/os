@@ -1,3 +1,13 @@
+2.9:
+    - Moved driver headers around
+        - Keyboard specific drivers are now in drivers/keyboard
+        - File specific drivers are now in drivers/files/image and drivers/files/os
+        - Storage specific drivers are now in drivers/storage
+    - Added fbprint_eachChar which prints every character of the ext-ascii alphabet (now quite working yet)
+        - Only available in TESTING mode!
+
+    - Oh yeah and i forgot to increese the mn build number so build numbers 267-270 in vault are also from this version
+
 2.8:
     - Reworked the LEH Header and header validation etc to fit the other header validations
     - Added leh.h to drivers/files

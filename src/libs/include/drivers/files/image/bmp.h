@@ -34,4 +34,4 @@ typedef struct {
     BMPInfoHeader info;
 } BMPHeader;
 
-uint8_t validate_bmp_header(const uint8_t *data, uint32_t file_size, BMPHeader *header);
+bool validate_bmp_header(const uint8_t *data, uint32_t file_size, BMPHeader *header);

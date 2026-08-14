@@ -45,6 +45,8 @@ void fbprint(const char* str);
 void fbprint_constant(const char* str);
 void fbprintln(const char* str);
 
+void fbprint_eachChar();
+
 /*
  * Formatted printing.
  *

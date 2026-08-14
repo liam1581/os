@@ -1,8 +1,8 @@
 #include <stddef.h>
 #include "bool.h"
 #include "x86_64/idt.h"
-#include "drivers/ps2.h"
-#include "drivers/keyboard.h"
+#include "drivers/keyboard/ps2.h"
+#include "drivers/keyboard/keyboard.h"
 
 #define KEYBOARD_EXTENDED_SCAN_CODE 0xE0
 
