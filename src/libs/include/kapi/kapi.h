@@ -1,7 +1,7 @@
 #pragma once
 #include "structs_and_enums/all.h"
 #include "kapi_def.h"
-#include "drivers/keycodes.h"
+#include "drivers/keyboard/keycodes.h"
 #include <stdint.h>
 #include <stddef.h>
 #include "bool.h"

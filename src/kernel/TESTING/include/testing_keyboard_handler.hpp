@@ -1,7 +1,7 @@
 #pragma once
 
 extern "C" {
-    #include "drivers/keyboard.h"
+    #include "drivers/keyboard/keyboard.h"
 }
 
 void testing_keyboard_buffer_clear();

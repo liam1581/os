@@ -1,4 +1,4 @@
-#include "drivers/files/bmp.h"
+#include "drivers/files/image/bmp.h"
 
 #include <stddef.h>
 #include "string.h"
@@ -8,7 +8,7 @@ bool validate_bmp_header(const uint8_t *data, uint32_t file_size, BMPHeader *hea
     // 14 bytes BMP file header
     // 40 bytes BITMAPINFOHEADER
     // = 54 bytes
-    if (data == NULL || header == NULL)
+    if (data == NULL)
         return false;
 
     if (file_size < sizeof(BMPHeader))

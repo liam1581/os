@@ -3,7 +3,7 @@
 #include "commands.hpp"
 
 extern "C" {
-    #include "drivers/keyboard.h"
+    #include "drivers/keyboard/keyboard.h"
 }
 
 extern Commands commands;

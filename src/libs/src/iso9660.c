@@ -1,5 +1,5 @@
-#include "drivers/iso9660.h"
-#include "drivers/atapi.h"
+#include "drivers/storage/iso9660.h"
+#include "drivers/storage/atapi.h"
 
 // ISO 9660 sector offsets
 #define ISO9660_SYSTEM_AREA_SECTORS  16  // first 16 sectors are system area

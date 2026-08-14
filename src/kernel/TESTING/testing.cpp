@@ -11,8 +11,6 @@ extern "C" {
     #include "mem/mem.h"
 
     #include "krnl.h"
-
-    #include "drivers/iso9660.h"
 }
 
 extern "C" void kernel_testing() {  

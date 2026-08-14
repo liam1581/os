@@ -5,13 +5,14 @@ extern "C" {
     #include "string.h"
     #include "debug.h"
     
-    #include "drivers/atapi.h"
-    #include "drivers/ata.h"
-    #include "drivers/iso9660.h"
-    #include "drivers/fat32.h"
-    #include "drivers/power.h"
+    #include "drivers/storage/atapi.h"
+    #include "drivers/storage/ata.h"
+    #include "drivers/storage/iso9660.h"
+    #include "drivers/storage/fat32.h"
     
-    #include "drivers/files/leh.h"
+    #include "drivers/files/os/leh.h"
+    
+    #include "drivers/power.h"
 
     #include "mem/mem.h"
 

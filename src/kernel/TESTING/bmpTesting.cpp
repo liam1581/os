@@ -9,10 +9,9 @@ extern "C" {
 
     #include "debug.h"
 
-    #include "drivers/files/bmp.h"
-    #include "drivers/files/lfh.h"
+    #include "drivers/files/image/bmp.h"
 
-    #include "drivers/iso9660.h"
+    #include "drivers/storage/iso9660.h"
 }
 
 

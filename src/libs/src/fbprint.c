@@ -5,8 +5,8 @@
 #include "krnl.h"
 
 #include "mem/mem.h"
-#include "drivers/files/lfh.h"
-#include "drivers/iso9660.h"
+#include "drivers/files/os/lfh.h"
+#include "drivers/storage/iso9660.h"
 
 #include <stdarg.h>
 #include <stdint.h>
@@ -951,6 +951,23 @@ void fbprintln(const char* str)
 {
     fbprint(str);
     fbprintc('\n');
+}
+
+void fbprint_eachChar() {
+#ifdef TESTING
+    fbprintln("!\"#$%&'()*+,-./01234567");
+    fbprintln("89:;<=>?@ABCDEFGHIJKLMNO");
+    fbprintln("PQRSTUVWXYZ[\\]^_`abcdefg");
+    fbprintln("hijklmnopqrstuvwxyz{|}~€");
+    fbprintln("‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œ");
+    fbprintln("žŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ");
+    fbprintln("¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍ");
+    fbprintln("ÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäå");
+    fbprintln("æçèéêëìíîïðñòóôõö÷øùúûüý");
+    fbprintln("þÿ");
+#else
+    fbprintln("This command is only available in TESTING mode");
+#endif
 }
 
 
