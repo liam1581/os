@@ -1,3 +1,9 @@
+3.0:
+    - Added imageRenderer.cpp/.hpp for rendering images (template<typename T>)
+    - Added iso9660_get_file_size(const char* path)
+
+    - All 2.10 versions in vault are basically the 3.0 versions because i forgot that after 2.9 comes 3.0 XD
+
 2.9:
     - Moved driver headers around
         - Keyboard specific drivers are now in drivers/keyboard

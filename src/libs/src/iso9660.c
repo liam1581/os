@@ -1,3 +1,6 @@
+#include <stddef.h>
+#include <stdint.h>
+
 #include "drivers/storage/iso9660.h"
 #include "drivers/storage/atapi.h"
 
@@ -244,4 +247,11 @@ bool iso9660_read_file(const char* path, uint8_t* buffer, uint32_t* out_size) {
     }
 
     return false;
+}
+
+uint32_t iso9660_get_file_size(const char* path) {
+    uint32_t returnValue;
+    iso9660_read_file(path, NULL, &returnValue);
+
+    return returnValue;
 }
