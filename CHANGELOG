@@ -1,3 +1,8 @@
+3.1:
+    - Added PNG rendering (finally)
+    - Planning on also adding JPG/JPEG rendering
+    - Changed screen size to 1152x864
+
 3.0:
     - Added imageRenderer.cpp/.hpp for rendering images (template<typename T>)
     - Added iso9660_get_file_size(const char* path)

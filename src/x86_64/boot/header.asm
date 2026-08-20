@@ -14,8 +14,8 @@ header_start:
 	dw 5
 	dw 0
 	dd 20
-	dd 1024
-	dd 768
+	dd 1152
+	dd 864
 	dd 32
 
 	align 8, db 0

@@ -1,6 +1,7 @@
 #include "drivers/files/image/bmp.h"
 
 #include <stddef.h>
+#include "print.h"
 #include "string.h"
 
 bool validate_bmp_header(const uint8_t *data, uint32_t file_size, BMPHeader *header) {
@@ -8,11 +9,15 @@ bool validate_bmp_header(const uint8_t *data, uint32_t file_size, BMPHeader *hea
     // 14 bytes BMP file header
     // 40 bytes BITMAPINFOHEADER
     // = 54 bytes
-    if (data == NULL)
+    if (data == NULL) {
+        println("PIXEL DATA IS ZERO");
         return false;
+    }
 
-    if (file_size < sizeof(BMPHeader))
+    if (file_size < sizeof(BMPHeader)) {
+        println("FILE SIZE IS SMALLER THAN HEADER SIZE");
         return false;
+    }
 
 
     /*
@@ -34,25 +39,35 @@ bool validate_bmp_header(const uint8_t *data, uint32_t file_size, BMPHeader *hea
     /* -------------------- */
 
     // "BM"
-    if (header->file.signature != 0x4D42)
+    if (header->file.signature != 0x4D42) {
+        println("INVALID FILE SIGNATURE");
         return false;
+    }
 
     // File size stored in BMP should match our actual size.
-    if (header->file.file_size != file_size)
+    if (header->file.file_size != file_size) {
+        println("FILE SIZE IN HEADER DOESNT MATCH REAL FILE SIZE");
         return false;
+    }
 
     // Reserved fields must be zero.
     if (header->file.reserved1 != 0 ||
-        header->file.reserved2 != 0)
-        return false;
+        header->file.reserved2 != 0) {
+            println("RESERVED BYTES ARENT 0");
+            return false;
+        }
 
     // Pixel data cannot be before the headers.
-    if (header->file.pixel_offset < sizeof(BMPHeader))
+    if (header->file.pixel_offset < sizeof(BMPHeader)) {
+        println("PIXEL DATA STARTS BEFORE THE HEADER");
         return false;
+    }
 
     // Pixel offset cannot be outside the file.
-    if (header->file.pixel_offset >= file_size)
+    if (header->file.pixel_offset >= file_size) {
+        println("PIXEL DATA OVERFLOW");
         return false;
+    }
 
 
     /* -------------------- */
@@ -60,30 +75,42 @@ bool validate_bmp_header(const uint8_t *data, uint32_t file_size, BMPHeader *hea
     /* -------------------- */
 
     // BITMAPINFOHEADER is 40 bytes.
-    if (header->info.header_size != 40)
+    if (header->info.header_size != 40) {
+        println("BMP INFO HEADER IS TOO SHORT");
         return false;
+    }
 
     // Width must be positive.
-    if (header->info.width <= 0)
+    if (header->info.width <= 0) {
+        println("WIDTH MUST BE POSITIVE");
         return false;
+    }
 
     // Height can be positive or negative.
     // Positive = bottom-up
     // Negative = top-down
-    if (header->info.height == 0)
+    if (header->info.height == 0) {
+        println("HEIGHT CANT BE 0");
         return false;
+    }
 
     // BMP requires exactly one plane.
-    if (header->info.planes != 1)
+    if (header->info.planes != 1) {
+        println("TOO MANY PLANES");
         return false;
+    }
 
     // For this implementation, only support 24-bit BMPs.
-    if (header->info.bits_per_pixel != 24)
+    if (header->info.bits_per_pixel != 24) {
+        println("ONLY 24BPP IS SUPPORTED");
         return false;
+    }
 
     // BI_RGB = uncompressed.
-    if (header->info.compression != 0)
+    if (header->info.compression != 0) {
+        println("BI_RGB CANT BE COMPRESSED");
         return false;
+    }
 
 
     /*
@@ -120,9 +147,9 @@ bool validate_bmp_header(const uint8_t *data, uint32_t file_size, BMPHeader *hea
      */
     if ((uint64_t)header->file.pixel_offset +
             pixel_data_size >
-        file_size)
-    {
-        return false;
+        file_size) {
+            println("PIXEL DATA TOO LONG FOR FILE");
+            return false;
     }
 
 
@@ -134,6 +161,7 @@ bool validate_bmp_header(const uint8_t *data, uint32_t file_size, BMPHeader *hea
     if (header->info.image_size != 0 &&
         header->info.image_size < pixel_data_size)
     {
+        println("IMAGE IS TOO SMALL");
         return false;
     }
 

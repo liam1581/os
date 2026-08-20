@@ -81,6 +81,41 @@ bool framebuffer_draw_bmp(
 
 
 /*
+ * Draw a decoded PNG image.
+ *
+ * pixels:
+ *     Pointer to the buffer returned by png_decode() -- already
+ *     top-down, tightly packed (no row padding), RGB or RGBA
+ *     (per has_alpha) in that byte order (unlike BMP, no BGR swap
+ *     needed).
+ *
+ * start_x/start_y:
+ *     Position on the screen where the top-left corner
+ *     of the image should be drawn.
+ *
+ * width/height:
+ *     Dimensions of the decoded image (PNGHeader::width/height).
+ *
+ * has_alpha:
+ *     true if pixels are 4 bytes/pixel RGBA (PNG color type 6),
+ *     false if 3 bytes/pixel RGB (color type 2). Pass
+ *     png_has_alpha(header) from png.h.
+ *
+ * Pixels with alpha == 0 are treated as fully transparent and left
+ * untouched on screen; any other alpha value is drawn fully opaque
+ * (this is a simple binary test, not real alpha blending).
+ */
+bool framebuffer_draw_png(
+    const uint8_t* pixels,
+    uint32_t start_x,
+    uint32_t start_y,
+    uint32_t width,
+    uint32_t height,
+    bool has_alpha
+);
+
+
+/*
  * Clear the entire framebuffer.
  */
 void framebuffer_clear(

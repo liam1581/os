@@ -1,5 +1,7 @@
 #include "video/framebuffer.h"
 
+#include "print.h"
+
 #include "multiboot2.h"
 #include "debug.h"
 
@@ -283,14 +285,20 @@ bool framebuffer_draw_bmp(
     uint32_t width,
     int32_t height
 ) {
-    if (!framebuffer_available)
+    if (!framebuffer_available) {
+        println("FRAMEBUFFER UNAVAILABLE");
         return false;
+    }
 
-    if (pixels == NULL)
+    if (pixels == NULL) {
+        println("PIXEL DATA IS NULL");
         return false;
+    }
 
-    if (width == 0 || height == 0)
+    if (width == 0 || height == 0) {
+        println("WIDTH OR HEIGHT IS ZERO");
         return false;
+    }
 
 
     /*
@@ -393,6 +401,71 @@ bool framebuffer_draw_bmp(
         }
     }
 
+
+    return true;
+}
+
+
+/*
+ * Draw a decoded PNG image. See framebuffer.h for details.
+ */
+bool framebuffer_draw_png(
+    const uint8_t* pixels,
+    uint32_t start_x,
+    uint32_t start_y,
+    uint32_t width,
+    uint32_t height,
+    bool has_alpha
+) {
+    if (!framebuffer_available) {
+        println("FRAMEBUFFER UNAVAILABLE");
+        return false;
+    }
+
+    if (pixels == NULL) {
+        println("PIXEL DATA IS NULL");
+        return false;
+    }
+
+    if (width == 0 || height == 0) {
+        println("WIDTH OR HEIGHT IS 0");
+        return false;
+    }
+
+    uint32_t bpp = has_alpha ? 4u : 3u;
+
+    /*
+     * Unlike BMP, png_decode() already hands back tightly packed,
+     * top-down RGB(A) rows -- no padding, no bottom-up flip, no BGR
+     * swap needed.
+     */
+    for (uint32_t y = 0; y < height; y++) {
+        const uint8_t* row = pixels + ((uint64_t)y * width * bpp);
+
+        for (uint32_t x = 0; x < width; x++) {
+            const uint8_t* pixel = row + (x * bpp);
+
+            uint8_t r = pixel[0];
+            uint8_t g = pixel[1];
+            uint8_t b = pixel[2];
+
+            /*
+             * Simple binary transparency: skip fully-transparent
+             * pixels, draw everything else fully opaque. This is not
+             * real alpha blending.
+             */
+            if (has_alpha && pixel[3] == 0)
+                continue;
+
+            framebuffer_put_pixel(
+                start_x + x,
+                start_y + y,
+                r,
+                g,
+                b
+            );
+        }
+    }
 
     return true;
 }

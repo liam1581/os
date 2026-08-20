@@ -9,5 +9,6 @@ extern "C" {
 
 
 void bmpTestingMain() {
-    renderTexture<BMPHeader>(ImageType::BMP_IMAGE, "/images/ex_128x.bmp", 0, 150);
+    //renderTexture(ImageType::BMP_IMAGE, "/images/ex_128x.bmp", 0, 150);
+    renderTexture(ImageType::PNG_IMAGE, "/images/ex.png", 0, 150);
 }
