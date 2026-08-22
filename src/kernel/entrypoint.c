@@ -2,12 +2,13 @@
 
 #include "c_commands.h"
 
-#include "video/framebuffer.h"
-#include "video/fbprint.h"
-#include "mem/mem.h"
-#include "mem/ram_watchdog.h"
-#include "x86_64/idt.h"
 #include "cpp/cpp_support.h"
+#include "drivers/video/framebuffer.h"
+#include "mem/ram_watchdog.h"
+#include "mem/mem.h"
+#include "x86_64/idt.h"
+
+#include "print.h"
 
 #include "krnl.h"
 

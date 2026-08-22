@@ -1,7 +1,7 @@
 #include "print.h"
 #include "bool.h"
-#include "video/framebuffer.h"
-#include "video/fbprint.h"
+#include "drivers/video/framebuffer.h"
+#include "drivers/video/fbprint.h"
 #include "x86_64/port.h"
 
 #include <stddef.h>

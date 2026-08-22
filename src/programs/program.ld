@@ -5,8 +5,10 @@ PHDRS {
     data PT_LOAD FLAGS(6);
 }
 
+LEH_HEADER_SIZE = 8;
+
 SECTIONS {
-    . = 0x1000000;
+    . = 0x1000000 + LEH_HEADER_SIZE;
 
     .text : {
         *(.text.entry)

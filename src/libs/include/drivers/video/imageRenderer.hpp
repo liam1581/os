@@ -8,8 +8,8 @@ extern "C" {
     #include "bool.h"
     #include "print.h"
     #include "mem/mem.h"
-    #include "video/framebuffer.h"
     #include "drivers/storage/iso9660.h"
+    #include "drivers/video/framebuffer.h"
     #include "drivers/files/image/bmp.h"
     #include "drivers/files/image/png.h"
 }
@@ -44,10 +44,6 @@ void renderTexture(ImageType imageType, const char* path, uint32_t start_x, uint
             PNGHeader pngHeader;
 
             if (validate_png_header(imgBuffer, outSize, &pngHeader)) {
-                // Unlike BMP, PNG pixel data is compressed -- it can't
-                // be pointed at directly inside imgBuffer. png_decode()
-                // allocates its own separate buffer, which we own and
-                // must free ourselves once drawn.
                 uint8_t* pixels;
                 uint32_t pixelSize;
 

@@ -1,7 +1,6 @@
 #include "drivers/storage/ata.h"
+#include "drivers/serial.h"
 #include "x86_64/port.h"
-
-#include "debug.h"
 
 #define ATA_PRIMARY_DATA         0x1F0
 #define ATA_PRIMARY_ERROR        0x1F1

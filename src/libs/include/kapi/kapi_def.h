@@ -33,13 +33,3 @@
 #define KAPI_PRINT_COLOR_PINK 13
 #define KAPI_PRINT_COLOR_YELLOW 14
 #define KAPI_PRINT_COLOR_WHITE 15
-
-
-
-
-
-#define STR(name, value) char name[] = value
-#define INT(name, value) int name = value
-#define BOOL(name, value) bool name = value;
-#define FLOAT(name, value) float name = value;
-#define CHAR(name, value) char name = value;

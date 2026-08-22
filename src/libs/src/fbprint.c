@@ -1,4 +1,4 @@
-#include "video/fbprint.h"
+#include "drivers/video/fbprint.h"
 #include "multiboot2.h"
 
 #include "bool.h"

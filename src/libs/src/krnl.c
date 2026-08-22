@@ -2,7 +2,7 @@
 
 #include "print.h"
 #include "debug.h"
-#include "video/framebuffer.h"
+#include "drivers/video/framebuffer.h"
 
 void KERNEL_PANIC(const char* filename, const char* error, int cls) {
     if (cls == 1) { clear_screen(); }

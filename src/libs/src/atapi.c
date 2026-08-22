@@ -1,7 +1,6 @@
 #include "drivers/storage/atapi.h"
+#include "drivers/serial.h"
 #include "x86_64/port.h"
-
-#include "debug.h"
 
 // Primary IDE channel
 #define ATA_PRIMARY_DATA         0x1F0

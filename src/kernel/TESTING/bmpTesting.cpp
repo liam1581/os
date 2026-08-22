@@ -1,5 +1,5 @@
 #include "bmpTesting.hpp"
-#include "video/imageRenderer.hpp"
+#include "drivers/video/imageRenderer.hpp"
 
 extern "C" {
     #include "mem/mem.h"

@@ -1,3 +1,8 @@
+3.2:
+    - Moved all of the video header files to drivers/video
+    - Fixed programs to be able to parse arguments to KAPI functions directly, not using the STR, INT etc Macros anymore
+        - removed STR calls from programs aswell as macro defines in kapi_defines.h
+
 3.1:
     - Added PNG rendering (finally)
     - Planning on also adding JPG/JPEG rendering

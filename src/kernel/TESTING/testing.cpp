@@ -6,7 +6,6 @@
 
 extern "C" {
     #include "print.h"
-    #include "video/framebuffer.h"
 
     #include "mem/mem.h"
 

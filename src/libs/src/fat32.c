@@ -1,5 +1,6 @@
 #include "drivers/storage/fat32.h"
 #include "drivers/storage/ata.h"
+
 #include "debug.h"
 
 // ─── BPB (BIOS Parameter Block) ───────────────────────────────────────────────

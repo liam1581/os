@@ -9,7 +9,6 @@ extern "C" {
 void* operator new(size_t size) {
     void* ptr = kmalloc(size);
     if (!ptr) {
-        // Out of memory
         while (1) { asm volatile("hlt"); }
     }
     return ptr;
