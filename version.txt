@@ -1,1 +1,1 @@
-CustomOS version 22082026.1343-3.2-300
+CustomOS version 23082026.1204-3.3-305

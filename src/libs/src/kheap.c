@@ -58,6 +58,7 @@ void kheap_init(void) {
     capacity_bytes = 0;
 }
 
+[[nodiscard("kmalloc's return value MUST BE USED!")]]
 void* kmalloc(size_t size) {
     if (size == 0) return NULL;
     size = align_up(size, ALIGNMENT);

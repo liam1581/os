@@ -4,7 +4,7 @@
 #include "debug.h"
 #include "drivers/video/framebuffer.h"
 
-void KERNEL_PANIC(const char* filename, const char* error, int cls) {
+[[noreturn]] void KERNEL_PANIC(const char* filename, const char* error, int cls) {
     if (cls == 1) { clear_screen(); }
     print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
     print("KERNEL PANIC IN \"");

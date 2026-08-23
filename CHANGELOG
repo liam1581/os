@@ -1,3 +1,6 @@
+3.3:
+    - Added compiler annotations to some code
+
 3.2:
     - Moved all of the video header files to drivers/video
     - Fixed programs to be able to parse arguments to KAPI functions directly, not using the STR, INT etc Macros anymore

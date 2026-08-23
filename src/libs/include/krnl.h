@@ -1,3 +1,3 @@
 #pragma once
 
-void KERNEL_PANIC(const char* filename, const char* error, int cls);
+[[noreturn]] void KERNEL_PANIC(const char* filename, const char* error, int cls);
