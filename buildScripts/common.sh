@@ -24,12 +24,12 @@ VERSION="${DD}${MM}${YYYY}.${HH}${MIN}-${MJ}.${MN}-${BN}"
 
 VARIANTS=("testing" "production" "kernelpanic")
 
-DEFINES_testing="-DKEYBOARD_GERMAN -DDEBUG -DTESTING"
-DEFINES_production="-DKEYBOARD_GERMAN -DDEBUG -DPRODUCTION"
-DEFINES_kernelpanic="-DKEYBOARD_GERMAN -DDEBUG -DKERNELPANIC"
+DEFINES_testing="-DKEYBOARD_GERMAN -DDEBUG_QEMU -DTESTING"
+DEFINES_production="-DKEYBOARD_GERMAN -DDEBUG_QEMU -DPRODUCTION"
+DEFINES_kernelpanic="-DKEYBOARD_GERMAN -DDEBUG_QEMU -DKERNELPANIC"
 
 ISO_VARIANT="testing"
-DEFINES="-DKEYBOARD_GERMAN -DDEBUG -DPRODUCTION"
+DEFINES="-DKEYBOARD_GERMAN -DDEBUG_QEMU -DPRODUCTION"
 
 INCLUDES="-I src/libs/include -I src/libs/include/kapi -I src/kernel/include -I src/kernel/cpp/include -I src/csh/include -I src/kernel/TESTING/include"
 KERNEL_SAFETY_FLAGS="-mno-red-zone -mno-mmx -mno-sse -mno-sse2"

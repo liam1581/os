@@ -5,10 +5,10 @@ extern "C" {
     #include "mem/mem.h"
 
     #include "drivers/files/image/bmp.h"
+    #include "timer.h"
 }
 
 
 void bmpTestingMain() {
-    //renderTexture(ImageType::BMP_IMAGE, "/images/ex_128x.bmp", 0, 150);
-    renderTexture("/images/ex.png", 0, 150);
+    renderTexture(ImageType::PNG_IMAGE, "/images/ex_ss.png", 0, 150);
 }

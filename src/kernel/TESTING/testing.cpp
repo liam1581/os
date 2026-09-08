@@ -7,6 +7,7 @@
 extern "C" {
     #include "print.h"
 
+    #include "x86_64/port.h"
     #include "mem/mem.h"
 
     #include "krnl.h"
@@ -34,7 +35,7 @@ extern "C" void kernel_testing() {
     cmd_fat_init(NullArgument);
     
     bmpTestingMain();
-    
+
     print("> ");
     
     keyboard_init();

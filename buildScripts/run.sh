@@ -28,6 +28,7 @@ qemu-system-x86_64 \
   -boot d \
   -vga std \
   -d int,cpu_reset -D qemu-crash.log \
+  -debugcon stdio \
   -serial tcp:127.0.0.1:1234,server &
 
 sleep 1

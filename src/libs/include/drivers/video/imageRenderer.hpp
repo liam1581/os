@@ -70,13 +70,3 @@ void renderTexture(ImageType imageType, const char* path, uint32_t start_x, uint
 
     kfree(imgBuffer);
 }
-
-void renderTexture(const char* path, uint32_t start_x, uint32_t start_y) {
-    if (validate_bmp_header((const uint8_t*)path, iso9660_get_file_size(path), nullptr)) {
-        renderTexture(ImageType::BMP_IMAGE, path, start_x, start_y);
-    } else if (validate_png_header((const uint8_t*)path, iso9660_get_file_size(path), nullptr)) {
-        renderTexture(ImageType::PNG_IMAGE, path, start_x, start_y);
-    } else {
-        println("Unsupported image format");
-    }
-}
