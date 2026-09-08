@@ -10,6 +10,7 @@ For going inside the Docker container:
 ```
 docker exec -it myos_cpp bash
 ```
+PLEASE USE build.sh FOR BUILDING AND RUNNING THE OS!
 
 OR just use the docker.sh file to build/run the docker container
 

@@ -1,3 +1,8 @@
+08092026.1707-3.4-336 -- 08092026.1712-3.4-337:
+    - Added custom build system using build.sh instead of the Makefile
+
+    - The contents of the builds shouldn't have changed since i just changed the build system!
+
 29082026.1606-3.3-306 -- 08092026.1701-3.4-335:
     - Added docker.sh for starting the docker container
     - Added renderTexture function that doesnt take a ImageType argument
