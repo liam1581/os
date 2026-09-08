@@ -17,6 +17,10 @@ SECTIONS {
         *(.text)
     } :text
 
+    .rodata : {
+        *(.rodata .rodata.*)
+    } :text
+
     . = ALIGN(4096);
 
     .init_array : {

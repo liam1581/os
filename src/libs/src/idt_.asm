@@ -27,6 +27,13 @@ idt_load:
 		push r14
 		push r15
 
+		; The SysV ABI requires DF=0 on entry to any called function.
+		; iretq (below) restores RFLAGS from whatever was captured when
+		; this interrupt fired, which simply reflects the interrupted
+		; code's DF at that instant -- not necessarily 0. Don't assume
+		; it; enforce it before calling into C.
+		cld
+
 		call %1
 
 		; restore general-purpose registers

@@ -12,10 +12,6 @@ extern "C" {
     #include "krnl.h"
 }
 
-#undef bool
-#undef true
-#undef false
-
 static bool command_string_equals(const char* a, const char* b) {
     while (*a && *a == *b) {
         a++;
@@ -97,39 +93,6 @@ static int parse_int(const char* text) {
     return negative ? -result : result;
 }
 
-static float parse_float(const char* text) {
-    if (text == nullptr) return 0.0f;
-
-    bool negative = false;
-    size_t i = 0;
-
-    if (text[i] == '-') {
-        negative = true;
-        i++;
-    } else if (text[i] == '+') {
-        i++;
-    }
-
-    float result = 0.0f;
-    while (text[i] >= '0' && text[i] <= '9') {
-        result = result * 10.0f + (float)(text[i] - '0');
-        i++;
-    }
-
-    if (text[i] == '.') {
-        i++;
-        float place = 0.1f;
-
-        while (text[i] >= '0' && text[i] <= '9') {
-            result += (float)(text[i] - '0') * place;
-            place *= 0.1f;
-            i++;
-        }
-    }
-
-    return negative ? -result : result;
-}
-
 static bool text_equals(const char* a, const char* b) {
     size_t i = 0;
     while (a[i] != '\0' && b[i] != '\0') {
@@ -148,10 +111,6 @@ static bool text_equals(const char* a, const char* b) {
 
 ArgumentValue::operator int() const {
     return parse_int(value);
-}
-
-ArgumentValue::operator float() const {
-    return parse_float(value);
 }
 
 ArgumentValue::operator bool() const {

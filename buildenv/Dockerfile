@@ -3,8 +3,8 @@ FROM debian:12
 # STEP 1: Set up gcc-cross-x86_64-elf
 # Adapted from https://github.com/randomdude/gcc-cross-x86_64-elf/blob/master/Dockerfile
 
-ARG BINUTILS_VERSION=2.41
-ARG GCC_VERSION=13.2.0
+ARG BINUTILS_VERSION=2.47
+ARG GCC_VERSION=16.2.0
 
 RUN set -x \
 	&& apt-get update \
@@ -26,7 +26,6 @@ RUN set -x \
 COPY src /usr/local/src/
 
 COPY gcc/t-x86_64-elf /usr/local/src/gcc-${GCC_VERSION}/gcc/config/i386/
-COPY gcc/config.gcc.patch /usr/local/src/gcc-${GCC_VERSION}/gcc/
 
 RUN set -x \
 	&& cd /usr/local/src \

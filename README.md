@@ -11,6 +11,8 @@ For going inside the Docker container:
 docker exec -it myos_cpp bash
 ```
 
+OR just use the docker.sh file to build/run the docker container
+
 Please also view the CHANGELOG file for information about what changed between versions
 
 Please also view and edit the Makefile:318, it uses a Windows Path for PuTTY since this was originally coded in wsl

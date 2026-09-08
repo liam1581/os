@@ -19,10 +19,6 @@ extern "C" {
     #include "timer.h"
 }
 
-#undef bool
-#undef true
-#undef false
-
 char current_dir[1024] = "/data/";
 char FATcurrent_dir[1024] = "/";
 bool cdInitialized = false;

@@ -13,13 +13,13 @@
 #include "krnl.h"
 
 void kernel_main(uint64_t multiboot_info_addr) {
-    call_global_constructors();
-    
     init_iso();
-    
+
     pmm_init(multiboot_info_addr);
     kheap_init();
-    
+
+    call_global_constructors();
+
     idt_init();
     ram_watchdog_init();
     

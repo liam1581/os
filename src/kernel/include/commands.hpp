@@ -14,7 +14,6 @@ extern "C" {
 
 enum class ArgumentType {
     ARG_INT,
-    ARG_FLOAT,
     ARG_BOOL,
     ARG_STRING,
 };
@@ -68,8 +67,6 @@ public:
 
             if constexpr (__is_same(T, int)) {
                 type = ArgumentType::ARG_INT;
-            } else if constexpr (__is_same(T, float)) {
-                type = ArgumentType::ARG_FLOAT;
             } else if constexpr (__is_same(T, bool)) {
                 type = ArgumentType::ARG_BOOL;
             } else if constexpr (__is_same(T, const char*)) {
@@ -103,10 +100,6 @@ private:
     Command commands[MAX_COMMANDS];
     int commandCount = 0;
 };
-
-#undef bool
-#undef true
-#undef false
 
 class ArgumentValue {
 public:

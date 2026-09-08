@@ -10,6 +10,15 @@ MAPPED_GIB equ 16
 section .text
 bits 32
 start:
+	; The Multiboot2 spec explicitly leaves all flag bits (including DF)
+	; undefined on entry -- only EBX (the multiboot info pointer) is
+	; guaranteed. The SysV ABI requires DF=0 for every function call from
+	; here on (compilers assume it's already clear and don't reset it
+	; themselves before emitting rep movs/stos/etc for struct copies and
+	; zero-init), so this must happen before anything else, including the
+	; ebx save below.
+	cld
+
 	; GRUB passes the multiboot2 info pointer in ebx. Save it immediately,
 	; before check_cpuid/check_long_mode (which use cpuid, clobbering ebx).
 	mov [mb_info_ptr], ebx

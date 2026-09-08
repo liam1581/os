@@ -1,3 +1,18 @@
+29082026.1606-3.3-306 -- 08092026.1701-3.4-335:
+    - Added docker.sh for starting the docker container
+    - Added renderTexture function that doesnt take a ImageType argument
+    - Added rodata section to main linker script
+    - Added -D option to qemu to output a log file
+    - Changed entrypoint initialization order to init iso, kheap and pmm before calling global constructors
+
+    - Removed bool #undef
+    - Removed support for float type arguments because we cant use SSE :c
+
+    - Updated to gcc 16.2.0 and c++26 (for da cat ears [^^])
+
+    - Planning on adding FAT32 support for renderTexture aswell as a render/draw command
+    - Planning on adding custom build system instead of make
+
 3.3:
     - Added compiler annotations to some code
 

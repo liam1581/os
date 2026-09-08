@@ -72,9 +72,9 @@ INCLUDES := -I src/libs/include -I src/libs/include/kapi -I src/kernel/include -
 KERNEL_SAFETY_FLAGS := -mno-red-zone -mno-mmx -mno-sse -mno-sse2
 
 CFLAGS := $(KERNEL_SAFETY_FLAGS)
-CXXFLAGS := -std=c++17 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics $(KERNEL_SAFETY_FLAGS)
+CXXFLAGS := -std=c++26 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics $(KERNEL_SAFETY_FLAGS)
 
-CXXFLAGS_SSE_OK := -std=c++17 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics -mno-red-zone
+CXXFLAGS_SSE_OK := -std=c++26 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mgeneral-regs-only
 
 # ----------------------------------------------------------------------------
 #  Per-variant object file lists (build/<variant>/...)
@@ -314,6 +314,7 @@ run:
 		-m 16G \
 		-boot d \
 		-vga std \
+		-d int,cpu_reset -D qemu-crash.log \
 		-serial tcp:127.0.0.1:1234,server &
 	@sleep 1
 	@/mnt/c/Program\ Files/PuTTY/putty.exe -raw 127.0.0.1 -P 1234
