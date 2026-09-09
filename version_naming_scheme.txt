@@ -1,11 +1,11 @@
-DDMMYYYY.HHMIN-MN.MN-BN
+DDMMYYYY.HHMM-MN.MN-BN
 
 (CET)
 DD: Day
 MM: Month
 YYYY: Year
 HH: Hour
-MIN: Minutes
+MM: Minutes
 
 MN: Major Versin Number
 MN: Minor Version Number (_Tx = Testing Version x)
