@@ -1,5 +1,4 @@
 Planned for future versions:
-    make the libs c++
     make the SeaShell (csh)
     make the os be installable to the fat32 drive
     exFAT and NTFS drivers
