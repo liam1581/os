@@ -24,21 +24,20 @@ void kernel_main(uint64_t multiboot_info_addr) {
     ram_watchdog_init();
     
     if (!framebuffer_init(multiboot_info_addr))
-        KERNEL_PANIC("entrypoint.c", "FAILED TO INITIALIZE FRAMEBUFFER", 1);
+        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "FAILED TO INITIALIZE FRAMEBUFFER", 1);
     if (!fbprint_init(multiboot_info_addr))
-        KERNEL_PANIC("entrypoint.c", "FAILED TO INITIALIZE FB_PRINT", 1);
+        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "FAILED TO INITIALIZE FB_PRINT", 1);
     
     
 #ifdef PRODUCTION
 #include "main.h"
     cpp_main();
-#endif
-#ifdef TESTING
+#elifdef TESTING
 #include "testing.h"
     kernel_testing();
+#elifdef KERNELPANIC
+    KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "KERNEL PANIC CAUSED BY USER\nSELECT PRODUCTION OR TESTING KERNEL IN GRUB", 1);
+#else
+    KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "NEITHER TESTING NOR PRODUCTION DEFINED", 1);
 #endif
-#ifdef KERNELPANIC
-    KERNEL_PANIC("entrypoint.c", "KERNEL PANIC CAUSED BY USER\nSELECT PRODUCTION OR TESTING KERNEL IN GRUB", 1);
-#endif
-    KERNEL_PANIC("entrypoint.c", "NEITHER TESTING NOR PRODUCTION DEFINED", 1);
 }

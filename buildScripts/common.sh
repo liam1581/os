@@ -31,7 +31,7 @@ DEFINES_kernelpanic="-DKEYBOARD_GERMAN -DDEBUG_QEMU -DKERNELPANIC"
 ISO_VARIANT="testing"
 DEFINES="-DKEYBOARD_GERMAN -DDEBUG_QEMU -DPRODUCTION"
 
-INCLUDES="-I src/libs/include -I src/libs/include/kapi -I src/kernel/include -I src/kernel/cpp/include -I src/csh/include -I src/kernel/TESTING/include"
+INCLUDES="-I src/libs/include -I src/libs/include/kapi -I src/kernel/include -I src/csh/include -I src/kernel/TESTING/include"
 KERNEL_SAFETY_FLAGS="-mno-red-zone -mno-mmx -mno-sse -mno-sse2"
 
 CFLAGS="${KERNEL_SAFETY_FLAGS}"

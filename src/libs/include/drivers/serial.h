@@ -11,6 +11,9 @@ void serial_init(uint32_t baud);
 void serial_write_byte(uint8_t byte);
 void serial_write(const char* str);
 void serial_writeln(const char* str);
+void serial_write_uint64_dec(uint64_t value);
+void serial_write_uint64_hex(uint64_t value);
+void serial_write_uint64_bin(uint64_t value);
 void serial_close();
 
 uint8_t serial_read_byte();

@@ -59,7 +59,7 @@ struct multiboot_tag_framebuffer_common* multiboot2_find_framebuffer(uint64_t mu
         
         /* * Framebuffer found. */
         if (tag->type == MULTIBOOT_TAG_TYPE_FRAMEBUFFER) {
-            DBG_PRINTLNS("FOUND FRAMEBUFFER TAG");
+            DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "FRAMEBUFFER TAG FOUND");
 
             return (struct multiboot_tag_framebuffer_common*)tag_ptr;
         }
@@ -67,7 +67,7 @@ struct multiboot_tag_framebuffer_common* multiboot2_find_framebuffer(uint64_t mu
         /* * Move to next 8-byte-aligned tag. */
         tag_ptr += multiboot2_align8(tag->size);
     }
-    DBG_PRINTLNS("NO FRAMEBUFFER TAG!");
+    DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "NO FRAMEBUFFER TAG FOUND");
 
     return NULL;
 }
@@ -76,7 +76,7 @@ struct multiboot_tag_framebuffer_rgb* multiboot2_find_framebuffer_rgb(uint64_t m
     struct multiboot_tag_framebuffer_common* framebuffer = multiboot2_find_framebuffer(multiboot_info_addr);
     
     if (framebuffer == NULL) {
-        DBG_PRINTLNS("NO FRAMEBUFFER TAG");
+        DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "NO FRAMEBUFFER TAG FOUND");
 
         return NULL;
     }
@@ -107,12 +107,12 @@ struct multiboot_tag_framebuffer_rgb* multiboot2_find_framebuffer_rgb(uint64_t m
     
     /* * Make sure this is an RGB framebuffer. */
     if (framebuffer->framebuffer_type != MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {
-        DBG_PRINTLNS("FRAMEBUFFER IS NOT RGB");
+        DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "FRAMEBUFFER IS NOT RGB");
         
         return NULL;
     }
     
-    DBG_PRINTLNS("FRAMEBUFER IS RGB");
+    DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "FRAMEBUFFER IS RGB");
     
     return (struct multiboot_tag_framebuffer_rgb*)framebuffer;
 }

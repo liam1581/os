@@ -1,6 +1,7 @@
 #include "drivers/storage/atapi.h"
-#include "drivers/serial.h"
 #include "x86_64/port.h"
+
+#include "debug.h"
 
 // Primary IDE channel
 #define ATA_PRIMARY_DATA         0x1F0
@@ -154,9 +155,9 @@ bool atapi_read_sector(uint32_t lba, uint8_t* buffer) {
     port_outb(port_lba_high,     0x08);
     port_outb(port_command,      ATA_CMD_PACKET);
 
-    if (!ata_wait_bsy()) { serial_write("atapi: BSY timeout\r\n"); return false; }
-    if (!ata_wait_drq()) { serial_write("atapi: DRQ timeout\r\n"); return false; }
-    if (ata_check_error()) { serial_write("atapi: error flag set\r\n"); return false; }
+    if (!ata_wait_bsy()) { DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "BSY timeout"); return false; }
+    if (!ata_wait_drq()) { DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "DRQ timeout"); return false; }
+    if (ata_check_error()) { DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "error flag set"); return false; }
 
     uint8_t packet[12] = {
         ATAPI_CMD_READ12, 0x00,
@@ -172,9 +173,9 @@ bool atapi_read_sector(uint32_t lba, uint8_t* buffer) {
         port_outw(port_data, word);
     }
 
-    if (!ata_wait_bsy()) { serial_write("atapi: BSY2 timeout\r\n"); return false; }
-    if (!ata_wait_drq()) { serial_write("atapi: DRQ2 timeout\r\n"); return false; }
-    if (ata_check_error()) { serial_write("atapi: error2 flag set\r\n"); return false; }
+    if (!ata_wait_bsy()) { DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "BSY2 timeout"); return false; }
+    if (!ata_wait_drq()) { DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "DRQ2 timeout"); return false; }
+    if (ata_check_error()) { DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "error2 flag set"); return false; }
 
     for (int i = 0; i < 1024; i++) {
         uint16_t word = port_inw(port_data);

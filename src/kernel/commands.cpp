@@ -5,9 +5,6 @@
 extern "C" {
     #include "string.h"
     #include "print.h"
-    #include "timer.h"
-
-    #include "debug.h"
 
     #include "krnl.h"
 }
@@ -185,7 +182,7 @@ bool ArgumentObject::getToken(int index, char* output, size_t outputSize) const 
 
 ArgumentValue ArgumentObject::getArgument(const char* argumentName) const {
     if (command == nullptr || argumentName == nullptr) {
-        return ArgumentValue(ArgumentType::ARG_STRING, nullptr, 0);
+        return {ArgumentType::ARG_STRING, nullptr, 0};
     }
 
     for (int i = 0; i < command->argumentCount; i++) {
@@ -194,25 +191,25 @@ ArgumentValue ArgumentObject::getArgument(const char* argumentName) const {
         }
 
         if (i >= MAX_ARGUMENTS) {
-            return ArgumentValue(command->arguments[i].type, nullptr, 0);
+            return {command->arguments[i].type, nullptr, 0};
         }
 
         if (!getToken(i, stringBuffers[i], MAX_ARGUMENT_BUFFER)) {
-            return ArgumentValue(command->arguments[i].type, nullptr, 0);
+            return {command->arguments[i].type, nullptr, 0};
         }
 
         size_t length = 0;
         while (stringBuffers[i][length] != '\0') length++;
 
-        return ArgumentValue(command->arguments[i].type, stringBuffers[i], length);
+        return {command->arguments[i].type, stringBuffers[i], length};
     }
 
-    return ArgumentValue(ArgumentType::ARG_STRING, nullptr, 0);
+    return {ArgumentType::ARG_STRING, nullptr, 0};
 }
 
 void Commands::add(const char* commandName, int argCount) {
     if (commandCount >= MAX_COMMANDS || argCount < 0 || argCount > MAX_ARGUMENTS) {
-        KERNEL_PANIC("commands.cpp", "TOO MANY COMMANDS/ARGUMENTS REGISERED", 1);
+        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "TOO MANY COMMANDS/ARGUMENTS REGISERED", 1);
         return;
     }
 
@@ -288,9 +285,8 @@ void Commands::handleCommand(char keyboard_buffer[]) {
 
         } else {
             clear_screen();
-            print("KRNLPANIC::");
             println(commands[i].name);
-            KERNEL_PANIC("commands.cpp", "COMMAND DEFINED AS KRNLPANIC::******** HAS NO FUNCTION DEFINED", 0);
+            KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "COMMAND HAS NO FUNCTION DEFINED", 0);
         }
 
         return;
@@ -397,8 +393,8 @@ void Commands::registerCommands() {
     helpMessage("cd", " \"directory\" - Changes directorys");
     helpMessage("cre.file", " \"file\" - Creates a file (C: drive only)");
     helpMessage("cre.dir", " \"directory\" - Creates a directory (C: drive only)");
-    helpMessage("cp", " \"src\" \"destination\" - Copies a file (C: drive only)");
-    helpMessage("mv", " \"src\" \"destination\" - Moves/renames a file (C: drive only)");
+    helpMessage("cp", R"( "src" "destination" - Copies a file (C: drive only))");
+    helpMessage("mv", R"( "src" "destination" - Moves/renames a file (C: drive only))");
     helpMessage("rm", "/del \"file\" - Deletes a file (C: drive only)");
     helpMessage("display_mem", " - displays memory usage");
     helpMessage("ver", " - Displays the kernel version");

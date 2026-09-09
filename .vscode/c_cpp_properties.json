@@ -3,15 +3,20 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "src/libs/include",
+                "src/libs/include/kapi",
+                "src/kernel/include",
+                "src/csh/include",
+                "src/kernel/TESTING/include"
             ],
             "defines": [
                 "KEYBOARD_QWERTZ",
-                "DEBUG"
+                "DEBUG_QEMU"
             ],
-            "compilerPath": "gcc",
+            "compilerPath": "/usr/local/bin/x86_64-elf-gcc",
             "cStandard": "c17",
-            "cppStandard": "c++17",
+            "cppStandard": "c++26",
             "intelliSenseMode": "linux-gcc-x64",
             "configurationProvider": "ms-vscode.makefile-tools"
         }

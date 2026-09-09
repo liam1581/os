@@ -1,6 +1,5 @@
 #include "main.h"
 
-#include "csh/csh.h"
 #include "commands.hpp"
 #include "keyboard_handler.hpp"
 #include "command_functions.hpp"
@@ -48,6 +47,6 @@ void cpp_main() {
 
     keyboard_init();
     keyboard_set_handler(handle_input);
-    
-    while (1);
+
+    while (true) {}
 }

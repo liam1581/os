@@ -63,6 +63,64 @@ void serial_writeln(const char* str) {
     serial_write("\r\n");
 }
 
+void serial_write_uint64_dec(uint64_t value) {
+    if (value == 0) {
+        serial_write_byte('0');
+        return;
+    }
+    
+    char buffer[20];
+    int i = 0;
+    
+    while (value > 0) {
+        buffer[i++] = (value % 10) + '0';
+        value /= 10;
+    }
+    
+    while (i-- > 0) {
+        serial_write_byte(buffer[i]);
+    }
+}
+
+void serial_write_uint64_hex(uint64_t value) {
+    if (value == 0) {
+        serial_write_byte('0');
+        return;
+    }
+    
+    char buffer[16];
+    int i = 0;
+    
+    while (value > 0) {
+        uint8_t digit = value & 0xF;
+        
+        if (digit < 10) {
+            buffer[i++] = digit + '0';
+        } else {
+            buffer[i++] = digit - 10 + 'A';
+        }
+        
+        value >>= 4;
+    }
+    
+    while (i-- > 0) {
+        serial_write_byte(buffer[i]);
+    }
+}
+
+void serial_write_uint64_bin(uint64_t value) {
+    char buffer[64];
+    
+    for (size_t i = 0; i < 64; i++) {
+        buffer[i] = (value & 1) + '0';
+        value >>= 1;
+    }
+    
+    for (size_t i = 64; i > 0; i--) {
+        serial_write_byte(buffer[i - 1]);
+    }
+}
+
 void serial_close() {
     while (!(port_inb(SERIAL_LINE_STATUS) & SERIAL_TX_EMPTY));
     port_outb(SERIAL_INT_ENABLE, 0x00);

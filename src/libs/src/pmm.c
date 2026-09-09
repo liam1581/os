@@ -61,7 +61,7 @@ void pmm_init(uint64_t multiboot_info_addr) {
 
     struct multiboot_tag_mmap* mmap = multiboot2_find_mmap(multiboot_info_addr);
     if (!mmap) {
-        DBG_PRINTLNS("PMM: no multiboot memory map tag found, 0 bytes usable");
+        DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "no multiboot2 mmap tag found");
         return;
     }
 

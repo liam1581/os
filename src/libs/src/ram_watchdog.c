@@ -9,7 +9,7 @@
 
 static void ram_watchdog_tick(void) {
     if (pmm_free_memory_bytes() == 0) {
-        KERNEL_PANIC("ram_watchdog.c", "OUT OF MEMORY: PHYSICAL RAM EXHAUSTED", 1);
+        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "OUT OF MEMORY: PHYSICAL RAM EXHAUSTED", 1);
     }
 }
 

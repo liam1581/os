@@ -4,7 +4,7 @@ extern "C" {
 
 KernelAPI* API;
 
-LHE_ENTRY void main(KernelAPI* api) {  
+LHE_ENTRY void main(KernelAPI* api) {
     API = api;
 
     api->println("Hello, World from CPP CD!");

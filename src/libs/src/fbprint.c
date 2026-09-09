@@ -462,10 +462,10 @@ int fbprint_init(uint64_t multiboot_info_addr)
             uint8_t* glyphsOut = fontBuffer + sizeof(LFHHeader);
             memcpy(glyphs, glyphsOut, 1526);
         } else {
-            KERNEL_PANIC("fbprint.c", "INVALID LFH FILE", 1);
+            KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "INVALID LFH FILE", 1);
         }
     } else {
-        KERNEL_PANIC("fbprint.c", "FAILED TO READ LFH FILE", 1);
+        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "FAILED TO READ LFH FILE", 1);
     }
     kfree(fontBuffer);
 

@@ -1,3 +1,9 @@
+09092026.1709-3.6-361 -- 09092026.1742-3.6-366:
+    - Added better debug printing/kernel_panic :3
+        - Adding c++ Logger class soon
+    - Removed unused include path (in .vscode and build script)
+    - Some code cleanup
+
 09092026.1527-3.5-352 -- 09092026.1550-3.5-360:
     - Added ver command displaying the current kernel version (with details)
     - Added version display on boot
