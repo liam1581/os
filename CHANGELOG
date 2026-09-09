@@ -1,5 +1,6 @@
-09092026.1846-3.7-367 -- 09092026.1932-3.7-375:
+09092026.1846-3.7-367 -- 09092026.1942-3.7-376:
     - Changed every kind of #ifdef to #if defined()
+    - Changed cmd_help to use DBG_PRINT instead of DBG_PRINTS
     - Removed patch file from buildenv/gcc cause it was unused
     
     (tried to get away from docker but no :c)

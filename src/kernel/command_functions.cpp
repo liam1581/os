@@ -85,9 +85,11 @@ int cmd_help(ArgumentObject args) {
         println("Available commands:");
         for (int i = 0; i < commands.getCommandsCount(); i++) {
             if (commands.getCommands()[i].helpMessage == nullptr) {
-                DBG_PRINTS("command_functions.cpp::cmd_help :: Command \"");
-                DBG_PRINTS(commands.getCommands()[i].name);
-                DBG_PRINTLNS("\" has no help message!");
+                char* msg = (char*)kmalloc(256);
+                strcat_s(msg, "Command ", commands.getCommands()[i].name);
+                strcat_s(msg, msg, " has no help message!");
+                DBG_PRINT(__FILE_NAME__, __FUNCTION__, __LINE__, msg);
+                kfree(msg);
             } else {
                 print("  ");
                 print(commands.getCommands()[i].name);
