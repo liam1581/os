@@ -380,6 +380,9 @@ void Commands::registerCommands() {
     add("display_mem", 0);
     executes("display_mem", cmd_display_mem);
 
+    add("ver", 0);
+    executes("ver", cmd_ver);
+
     helpMessage("echo", " \"message\" - Prints a message!");
     helpMessage("cls", " - Clears the screen");
     helpMessage("reboot", " - Restart the Computer");
@@ -398,6 +401,7 @@ void Commands::registerCommands() {
     helpMessage("mv", " \"src\" \"destination\" - Moves/renames a file (C: drive only)");
     helpMessage("rm", "/del \"file\" - Deletes a file (C: drive only)");
     helpMessage("display_mem", " - displays memory usage");
+    helpMessage("ver", " - Displays the kernel version");
     helpMessage("TESTING", " - Causes kernel panic because no function is defined");
 
     add("TESTING", 0);

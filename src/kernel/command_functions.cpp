@@ -746,6 +746,98 @@ int cmd_display_mem(ArgumentObject) {
     return 0;
 }
 
+void testing(uint8_t* kv, uint32_t kl) {
+    print("Kernel compiled at (DD/MM/YYYY HH/MM): ");
+    printc(kv[0]);
+    printc(kv[1]);
+    printc('/');
+    printc(kv[2]);
+    printc(kv[3]);
+    printc('/');
+    printc(kv[4]);
+    printc(kv[5]);
+    printc(kv[6]);
+    printc(kv[7]);
+    printc(' ');
+    printc(kv[9]);
+    printc(kv[10]);
+    printc(':');
+    printc(kv[11]);
+    printc(kv[12]);
+    printc('\n');
+
+    print("Kernel version: ");
+    printc(kv[14]);
+    printc(kv[15]);
+    printc(kv[16]);
+    printc('\n');
+
+    print("Kernel build number: ");
+    uint32_t currentIndex = kl - (kl - 18);
+    for (uint32_t i = currentIndex; i < kl; i++) {
+        printc(kv[i]);
+    }
+    printc('\n');
+}
+
+int cmd_ver(ArgumentObject) {
+    uint8_t versionBuffer[4096];
+    uint32_t versionLen;
+
+    if (!iso9660_read_file("/data/ver.txt", versionBuffer, &versionLen)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("\nFailed to read version file!");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    } else {
+        print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
+        print("\nKernel version: ");
+        for (uint32_t i = 0; i < versionLen; i++) {
+            printc((char)versionBuffer[i]);
+        }
+        printc('\n');
+        print("Compiled at (DD/MM/YYYY HH/MM): ");
+        printc(versionBuffer[0]);
+        printc(versionBuffer[1]);
+        printc('/');
+        printc(versionBuffer[2]);
+        printc(versionBuffer[3]);
+        printc('/');
+        printc(versionBuffer[4]);
+        printc(versionBuffer[5]);
+        printc(versionBuffer[6]);
+        printc(versionBuffer[7]);
+        printc(' ');
+        printc(versionBuffer[9]);
+        printc(versionBuffer[10]);
+        printc(':');
+        printc(versionBuffer[11]);
+        printc(versionBuffer[12]);
+        printc('\n');
+
+        print("Version: ");
+        printc(versionBuffer[14]);
+        printc(versionBuffer[15]);
+        printc(versionBuffer[16]);
+        printc('\n');
+
+        print("Build number: ");
+        uint32_t currentIndex = versionLen - (versionLen - 18);
+        for (uint32_t i = currentIndex; i < versionLen; i++) {
+            printc(versionBuffer[i]);
+        }
+        
+        printc('\n');
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+    }
+
+    return 0;
+}
+
+void get_kernel_version(uint8_t *vb, uint32_t* vs) {
+    iso9660_read_file("/data/ver.txt", vb, vs);
+}
+
 char* get_current_dir() {
     return current_dir;
 }

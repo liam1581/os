@@ -210,6 +210,7 @@ build_all() {
   cp "dist/x86_64/kernel_${ISO_VARIANT}.bin" targets/x86_64/iso/boot/kernel.bin
 
   printf "${DIM}[  --]${RESET} ${MAGENTA}${BOLD} ISO${RESET} ${DIM}dist/x86_64/kernel_${VERSION}.iso${RESET}\n"
+  echo "${VERSION}" > targets/x86_64/iso/data/ver.txt
   grub-mkrescue /usr/lib/grub/i386-pc --modules="normal multiboot2 all_video video video_bochs gfxterm" -o "dist/x86_64/kernel_${VERSION}.iso" targets/x86_64/iso > /dev/null 2>&1
   
   cp "dist/x86_64/kernel_${VERSION}.iso" vault/

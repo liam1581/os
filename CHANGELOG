@@ -1,3 +1,9 @@
+09092026.1527-3.5-352 -- 09092026.1550-3.5-360:
+    - Added ver command displaying the current kernel version (with details)
+    - Added version display on boot
+    - Moved version text file to targets/x86_64/iso/data
+    - Made current version automatically be inserted into ver.txt
+
 08092026.1813-3.4-338 -- 08092026.1845-3.4-351:
     - Added more testing png's (minecraft screenshots) that... dont work?
     - Changed debug messages now going to qemu debug monitor instead of serial interface

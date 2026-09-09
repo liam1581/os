@@ -2,6 +2,10 @@
 
 #include "commands.hpp"
 
+extern "C" {
+    #include <stdint.h>
+}
+
 int cmd_echo(ArgumentObject args);
 int cmd_help(ArgumentObject args);
 int cmd_cls(ArgumentObject);
@@ -21,7 +25,9 @@ int cmd_cp(ArgumentObject args);
 int cmd_mv(ArgumentObject args);
 int cmd_rm(ArgumentObject args);
 int cmd_display_mem(ArgumentObject);
+int cmd_ver(ArgumentObject);
 
+void get_kernel_version(uint8_t *vb, uint32_t* vs);
 char* get_current_dir();
 char* get_fat_current_dir();
 char get_current_drive();

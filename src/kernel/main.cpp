@@ -13,9 +13,19 @@ extern "C" {
 Commands commands;
 
 void cpp_main() {
+    cmd_fat_init(NullArgument);
+    
+    uint8_t versionBuffer[4096];
+    uint32_t versionLen;
+    get_kernel_version(versionBuffer, &versionLen);
+    
     clear_screen();
     print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
-    println("Welcome to CustomOS\n");
+    print("Welcome to CustomOS version ");
+    for (uint32_t i = 0; i < versionLen; i++) {
+        printc((char)versionBuffer[i]);
+    }
+    print("\n\n");
 
     print_set_color(PRINT_COLOR_LIGHT_GRAY, PRINT_COLOR_BLACK);
     print("Memory: ");
@@ -27,9 +37,6 @@ void cpp_main() {
     print_uint64_dec((pmm_total_memory_bytes() - pmm_free_memory_bytes()) / 1024 / 1024);
     println(" MiB used\n");
     print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
-
-    cmd_atapi_init(NullArgument);
-    cmd_fat_init(NullArgument);
 
     commands.registerCommands();
 
