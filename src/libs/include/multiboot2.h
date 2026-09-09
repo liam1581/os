@@ -76,7 +76,7 @@ struct multiboot_tag_framebuffer_rgb {
     uint8_t framebuffer_blue_mask_size;
 };
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -86,6 +86,6 @@ struct multiboot_tag_mmap* multiboot2_find_mmap(uint64_t multiboot_info_addr);
 struct multiboot_tag_framebuffer_common* multiboot2_find_framebuffer(uint64_t multiboot_info_addr);
 struct multiboot_tag_framebuffer_rgb* multiboot2_find_framebuffer_rgb(uint64_t multiboot_info_addr);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

@@ -452,15 +452,15 @@ void fb_put_pixel(
 
 int fbprint_init(uint64_t multiboot_info_addr)
 {
-    uint8_t* fontBuffer = (uint8_t*)kmalloc(1536);
     const char* fontPath = "/fonts/5x7.lfh";
+    uint8_t* fontBuffer = (uint8_t*)kmalloc(iso9660_get_file_size(fontPath));
     uint32_t fontFileSize;
 
     LFHHeader fontHeader;
     if (iso9660_read_file(fontPath, fontBuffer, &fontFileSize)) {
         if (validate_lfh_header(fontBuffer, fontFileSize, &fontHeader)) {
             uint8_t* glyphsOut = fontBuffer + sizeof(LFHHeader);
-            memcpy(glyphs, glyphsOut, 1526);
+            memcpy(glyphs, glyphsOut, iso9660_get_file_size(fontPath) - sizeof(LFHHeader));
         } else {
             KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "INVALID LFH FILE", 1);
         }
@@ -954,7 +954,7 @@ void fbprintln(const char* str)
 }
 
 void fbprint_eachChar() {
-#ifdef TESTING
+#if defined(TESTING)
     fbprintln("!\"#$%&'()*+,-./01234567");
     fbprintln("89:;<=>?@ABCDEFGHIJKLMNO");
     fbprintln("PQRSTUVWXYZ[\\]^_`abcdefg");

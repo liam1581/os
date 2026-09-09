@@ -1,11 +1,11 @@
 #pragma once
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
 void call_global_constructors(void);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif

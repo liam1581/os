@@ -1,4 +1,4 @@
-#ifdef KEYBOARD_QWERTZ
+#if defined(KEYBOARD_QWERTZ)
 #define KEY_CODE_ESCAPE 0x01
 #define KEY_CODE_F1 0x3B
 #define KEY_CODE_F2 0x3C
@@ -99,7 +99,7 @@
 #define KEY_CODE_PAGE_DOWN 0xE051
 #endif
 
-#ifdef KEYBOARD_QWERTY
+#if defined(KEYBOARD_QWERTY)
 #define KEY_CODE_ESCAPE 0x01
 #define KEY_CODE_F1 0x3B
 #define KEY_CODE_F2 0x3C

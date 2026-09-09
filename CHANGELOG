@@ -1,3 +1,9 @@
+09092026.1846-3.7-367 -- 09092026.1932-3.7-375:
+    - Changed every kind of #ifdef to #if defined()
+    - Removed patch file from buildenv/gcc cause it was unused
+    
+    (tried to get away from docker but no :c)
+
 09092026.1709-3.6-361 -- 09092026.1742-3.6-366:
     - Added better debug printing/kernel_panic :3
         - Adding c++ Logger class soon

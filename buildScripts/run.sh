@@ -32,4 +32,4 @@ qemu-system-x86_64 \
   -serial tcp:127.0.0.1:1234,server &
 
 sleep 1
-/mnt/c/Program\ Files/PuTTY/putty.exe -raw 127.0.0.1 -P 1234
+putty -raw 127.0.0.1 -P 1234

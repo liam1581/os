@@ -53,7 +53,7 @@
 #define KEY_CODE_ARROW_KEY_UP 0xE048
 
 
-#ifdef KEYBOARD_GERMAN
+#if defined(KEYBOARD_GERMAN)
     #define KEY_CODE_UP_ARROW 0x29
     #define KEY_CODE_ß 0x0C
     #define KEY_CODE_ACUTE_ACCENT 0x0D

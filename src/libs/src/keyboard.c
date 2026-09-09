@@ -137,10 +137,10 @@ int keyboard_map[6][18] = {
 };
 
 uint8_t keycode_to_ascii_ext(uint16_t code, bool shift_pressed, bool altgr_pressed) {
-// #ifdef KEYBOARD_GERMAN
+// #if defined(KEYBOARD_GERMAN)
 //     const char* keyboard_layout = "german";
 // #endif
-// #ifdef KEYBOARD_EN_US
+// #if defined(KEYBOARD_EN_US)
 //     const char* keyboard_layout = "en_us";
 // #endif
 

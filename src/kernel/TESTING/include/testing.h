@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -8,6 +8,6 @@ extern "C" {
 
 void kernel_testing();
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif
