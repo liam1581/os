@@ -14,7 +14,6 @@ void debug_writeln(const char* str) {
     debug_write(str);
     debug_putc('\n');
 }
-
 void debug_write_uint64_dec(uint64_t value) {
     if (value == 0) {
         debug_putc('0');
@@ -33,7 +32,6 @@ void debug_write_uint64_dec(uint64_t value) {
         debug_putc(buffer[i]);
     }
 }
-
 void debug_write_uint64_hex(uint64_t value) {
     if (value == 0) {
         debug_putc('0');
@@ -59,7 +57,6 @@ void debug_write_uint64_hex(uint64_t value) {
         debug_putc(buffer[i]);
     }
 }
-
 void debug_write_uint64_bin(uint64_t value) {
     char buffer[64];
     

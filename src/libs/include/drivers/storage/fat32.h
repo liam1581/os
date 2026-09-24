@@ -24,6 +24,9 @@ bool fat32_read_file(const char* path, uint8_t* buffer, uint32_t* out_size);
 // Write
 bool fat32_create_file(const char* path);
 bool fat32_create_dir(const char* path);
+bool fat32_clear_file(const char* path);
+bool fat32_append_file(const char* path, const uint8_t* buffer, uint32_t size);
+bool fat32_overwrite_file(const char* path, const uint8_t* buffer, uint32_t size);
 bool fat32_write_file(const char* path, const uint8_t* buffer, uint32_t size);
 bool fat32_rename(const char* path, const char* new_name);
 bool fat32_copy_file(const char* src, const char* dest);

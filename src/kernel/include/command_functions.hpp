@@ -24,6 +24,9 @@ int cmd_cre_dir(ArgumentObject args);
 int cmd_cp(ArgumentObject args);
 int cmd_mv(ArgumentObject args);
 int cmd_rm(ArgumentObject args);
+int cmd_clear_file(ArgumentObject args);
+int cmd_write_file(ArgumentObject args);
+int cmd_overwrite_file(ArgumentObject args);
 int cmd_display_mem(ArgumentObject);
 int cmd_ver(ArgumentObject);
 

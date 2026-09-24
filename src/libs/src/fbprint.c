@@ -5,7 +5,8 @@
 #include "krnl.h"
 
 #include "mem/mem.h"
-#include "drivers/files/os/lfh.h"
+#include "drivers/files/os/ttf.h"
+#include "drivers/files/os/ttf_rasterizer.h"
 #include "drivers/storage/iso9660.h"
 
 #include <stdarg.h>
@@ -46,12 +47,27 @@ static struct Framebuffer framebuffer;
  * ============================================================
  */
 
-#define FONT_WIDTH   5
-#define FONT_HEIGHT  7
-#define FONT_SCALE   2
+#define TTF_POINT_SIZE 24.0f
 
-#define CHAR_WIDTH  (FONT_WIDTH * FONT_SCALE + FONT_SCALE)
-#define CHAR_HEIGHT (FONT_HEIGHT * FONT_SCALE + FONT_SCALE)
+// Upper bound on a single glyph's rasterized cell, in pixels. Must not
+// exceed TTF_RASTER_MAX_CELL_DIM in ttf_rasterizer.c (128). Generous
+// enough for TTF_POINT_SIZE above with real fonts' typical bounding
+// boxes (see ttf.c's TTFGlyphOutline bbox fields).
+#define GLYPH_CELL_MAX 64
+
+// CHAR_HEIGHT is fixed per line (vertical layout stays a grid; only
+// horizontal glyph advance is variable-width -- see x_for_col() below).
+// Set once in fbprint_init() from the loaded font's own metrics; there
+// is no compile-time correct value once the font is data, not a
+// baked-in bitmap array.
+static uint32_t CHAR_HEIGHT = 32;
+
+// A conservative (small) assumed minimum glyph advance, in pixels, used
+// only to size text_buffer's column capacity and clamp cursor bounds
+// against the framebuffer width. Real advances vary per glyph -- see
+// x_for_col() -- this is not used for actual layout, only as a safe
+// upper bound on "how many columns could possibly fit".
+#define MIN_ASSUMED_ADVANCE 6
 
 
 /*
@@ -144,250 +160,34 @@ void fbprint_set_color(uint8_t foreground, uint8_t background)
  * ============================================================
  */
 
-uint8_t glyphs[218][7];
+// The loaded TTF font. font_loaded guards every use of `font` below --
+// fbprint_init() must succeed before any drawing happens.
+static TTFFont font;
+static bool font_loaded = false;
+static float glyph_scale = 0.0f; // pixels per font unit, at TTF_POINT_SIZE
+static float glyph_baseline = 0.0f; // pixel y-offset from a cell's top to the baseline
 
-static const uint8_t* get_glyph(uint8_t c)
+// Per-glyph metrics needed by callers that only need layout info (not
+// pixels) -- used for cursor advance and wrap decisions without paying
+// for a full rasterize.
+static uint32_t glyph_advance_width(uint8_t c)
 {
-    switch (c) {
-        case ' ': return glyphs[0];
+    if (!font_loaded)
+        return MIN_ASSUMED_ADVANCE;
 
-        case 'A': return glyphs[1];
-        case 'B': return glyphs[2];
-        case 'C': return glyphs[3];
-        case 'D': return glyphs[4];
-        case 'E': return glyphs[5];
-        case 'F': return glyphs[6];
-        case 'G': return glyphs[7];
-        case 'H': return glyphs[8];
-        case 'I': return glyphs[9];
-        case 'J': return glyphs[10];
-        case 'K': return glyphs[11];
-        case 'L': return glyphs[12];
-        case 'M': return glyphs[13];
-        case 'N': return glyphs[14];
-        case 'O': return glyphs[15];
-        case 'P': return glyphs[16];
-        case 'Q': return glyphs[17];
-        case 'R': return glyphs[18];
-        case 'S': return glyphs[19];
-        case 'T': return glyphs[20];
-        case 'U': return glyphs[21];
-        case 'V': return glyphs[22];
-        case 'W': return glyphs[23];
-        case 'X': return glyphs[24];
-        case 'Y': return glyphs[25];
-        case 'Z': return glyphs[26];
+    uint16_t gid = ttf_char_to_glyph(&font, (uint32_t)c);
 
-        case 'a': return glyphs[69];
-        case 'b': return glyphs[70];
-        case 'c': return glyphs[71];
-        case 'd': return glyphs[72];
-        case 'e': return glyphs[73];
-        case 'f': return glyphs[74];
-        case 'g': return glyphs[75];
-        case 'h': return glyphs[76];
-        case 'i': return glyphs[77];
-        case 'j': return glyphs[78];
-        case 'k': return glyphs[79];
-        case 'l': return glyphs[80];
-        case 'm': return glyphs[81];
-        case 'n': return glyphs[82];
-        case 'o': return glyphs[83];
-        case 'p': return glyphs[84];
-        case 'q': return glyphs[85];
-        case 'r': return glyphs[86];
-        case 's': return glyphs[87];
-        case 't': return glyphs[88];
-        case 'u': return glyphs[89];
-        case 'v': return glyphs[90];
-        case 'w': return glyphs[91];
-        case 'x': return glyphs[92];
-        case 'y': return glyphs[93];
-        case 'z': return glyphs[94];
+    // static: TTFGlyphOutline is ~9.4KB, far too large for a stack
+    // local -- see ttf.h's warning on this exact point. This function
+    // is never called recursively/reentrantly (no interrupt handler
+    // calls into fbprint), so a single static instance is safe here,
+    // same reasoning as ttf_rasterizer.c's g_accum_storage.
+    static TTFGlyphOutline outline;
+    if (!ttf_get_glyph_outline(&font, gid, &outline))
+        return MIN_ASSUMED_ADVANCE;
 
-        case '0': return glyphs[27];
-        case '1': return glyphs[28];
-        case '2': return glyphs[29];
-        case '3': return glyphs[30];
-        case '4': return glyphs[31];
-        case '5': return glyphs[32];
-        case '6': return glyphs[33];
-        case '7': return glyphs[34];
-        case '8': return glyphs[35];
-        case '9': return glyphs[36];
-
-        case '!': return glyphs[40];
-        case '"': return glyphs[46];
-        case '#': return glyphs[47];
-        case '$': return glyphs[48];
-        case '%': return glyphs[49];
-        case '&': return glyphs[50];
-        case '\'': return glyphs[51];
-        case '(': return glyphs[52];
-        case ')': return glyphs[53];
-        case '*': return glyphs[54];
-        case '+': return glyphs[55];
-        case ',': return glyphs[39];
-        case '-': return glyphs[41];
-        case '.': return glyphs[38];
-        case '/': return glyphs[42];
-
-        case ':': return glyphs[37];
-        case ';': return glyphs[56];
-        case '<': return glyphs[57];
-        case '=': return glyphs[58];
-        case '>': return glyphs[59];
-        case '?': return glyphs[44];
-        case '@': return glyphs[60];
-
-        case '[': return glyphs[61];
-        case '\\': return glyphs[45];
-        case ']': return glyphs[62];
-        case '^': return glyphs[63];
-        case '_': return glyphs[43];
-        case '`': return glyphs[64];
-
-        case '{': return glyphs[65];
-        case '|': return glyphs[66];
-        case '}': return glyphs[67];
-        case '~': return glyphs[68];
-
-        case 0x80: return glyphs[95];  // €
-        case 0x82: return glyphs[96];  // ‚
-        case 0x83: return glyphs[97];  // ƒ
-        case 0x84: return glyphs[98];  // „
-        case 0x85: return glyphs[99];  // …
-        case 0x86: return glyphs[100]; // †
-        case 0x87: return glyphs[101]; // ‡
-        case 0x88: return glyphs[102]; // ˆ
-        case 0x89: return glyphs[103]; // ‰
-        case 0x8A: return glyphs[104]; // Š
-        case 0x8B: return glyphs[105]; // ‹
-        case 0x8C: return glyphs[106]; // Œ
-        case 0x8E: return glyphs[107]; // Ž
-        case 0x91: return glyphs[108]; // ‘
-        case 0x92: return glyphs[109]; // ’
-        case 0x93: return glyphs[110]; // “
-        case 0x94: return glyphs[111]; // ”
-        case 0x95: return glyphs[112]; // •
-        case 0x96: return glyphs[113]; // –
-        case 0x97: return glyphs[114]; // —
-        case 0x98: return glyphs[115]; // ˜
-        case 0x99: return glyphs[116]; // ™
-        case 0x9A: return glyphs[117]; // š
-        case 0x9B: return glyphs[118]; // ›
-        case 0x9C: return glyphs[119]; // œ
-        case 0x9E: return glyphs[120]; // ž
-        case 0x9F: return glyphs[121]; // Ÿ
-        case 0xA0: return glyphs[122]; // Non-breaking Space
-        case 0xA1: return glyphs[123]; // ¡
-        case 0xA2: return glyphs[124]; // ¢
-        case 0xA3: return glyphs[125]; // £
-        case 0xA4: return glyphs[126]; // ¤
-        case 0xA5: return glyphs[127]; // ¥
-        case 0xA6: return glyphs[128]; // ¦
-        case 0xA7: return glyphs[129]; // §
-        case 0xA8: return glyphs[130]; // ¨
-        case 0xA9: return glyphs[131]; // ©
-        case 0xAA: return glyphs[132]; // ª
-        case 0xAB: return glyphs[133]; // «
-        case 0xAC: return glyphs[134]; // ¬
-        case 0xAD: return glyphs[135]; // Soft Hyphen
-        case 0xAE: return glyphs[136]; // ®
-        case 0xAF: return glyphs[137]; // ¯
-        case 0xB0: return glyphs[138]; // °
-        case 0xB1: return glyphs[139]; // ±
-        case 0xB2: return glyphs[140]; // ²
-        case 0xB3: return glyphs[141]; // ³
-        case 0xB4: return glyphs[142]; // ´
-        case 0xB5: return glyphs[143]; // µ
-        case 0xB6: return glyphs[144]; // ¶
-        case 0xB7: return glyphs[145]; // ·
-        case 0xB8: return glyphs[146]; // ¸
-        case 0xB9: return glyphs[147]; // ¹
-        case 0xBA: return glyphs[148]; // º
-        case 0xBB: return glyphs[149]; // »
-        case 0xBC: return glyphs[150]; // ¼
-        case 0xBD: return glyphs[151]; // ½
-        case 0xBE: return glyphs[152]; // ¾
-        case 0xBF: return glyphs[153]; // ¿
-        case 0xC0: return glyphs[154]; // À
-        case 0xC1: return glyphs[155]; // Á
-        case 0xC2: return glyphs[156]; // Â
-        case 0xC3: return glyphs[157]; // Ã
-        case 0xC4: return glyphs[158]; // Ä
-        case 0xC5: return glyphs[159]; // Å
-        case 0xC6: return glyphs[160]; // Æ
-        case 0xC7: return glyphs[161]; // Ç
-        case 0xC8: return glyphs[162]; // È
-        case 0xC9: return glyphs[163]; // É
-        case 0xCA: return glyphs[164]; // Ê
-        case 0xCB: return glyphs[165]; // Ë
-        case 0xCC: return glyphs[166]; // Ì
-        case 0xCD: return glyphs[167]; // Í
-        case 0xCE: return glyphs[168]; // Î
-        case 0xCF: return glyphs[169]; // Ï
-        case 0xD0: return glyphs[170]; // Ð
-        case 0xD1: return glyphs[171]; // Ñ
-        case 0xD2: return glyphs[172]; // Ò
-        case 0xD3: return glyphs[173]; // Ó
-        case 0xD4: return glyphs[174]; // Ô
-        case 0xD5: return glyphs[175]; // Õ
-        case 0xD6: return glyphs[176]; // Ö
-        case 0xD7: return glyphs[177]; // ×
-        case 0xD8: return glyphs[178]; // Ø
-        case 0xD9: return glyphs[179]; // Ù
-        case 0xDA: return glyphs[180]; // Ú
-        case 0xDB: return glyphs[181]; // Û
-        case 0xDC: return glyphs[182]; // Ü
-        case 0xDD: return glyphs[183]; // Ý
-        case 0xDE: return glyphs[184]; // Þ
-        case 0xDF: return glyphs[185]; // ß
-        case 0xE0: return glyphs[186]; // à
-        case 0xE1: return glyphs[187]; // á
-        case 0xE2: return glyphs[188]; // â
-        case 0xE3: return glyphs[189]; // ã
-        case 0xE4: return glyphs[190]; // ä
-        case 0xE5: return glyphs[191]; // å
-        case 0xE6: return glyphs[192]; // æ
-        case 0xE7: return glyphs[193]; // ç
-        case 0xE8: return glyphs[194]; // è
-        case 0xE9: return glyphs[195]; // é
-        case 0xEA: return glyphs[196]; // ê
-        case 0xEB: return glyphs[197]; // ë
-        case 0xEC: return glyphs[198]; // ì
-        case 0xED: return glyphs[199]; // í
-        case 0xEE: return glyphs[200]; // î
-        case 0xEF: return glyphs[201]; // ï
-        case 0xF0: return glyphs[202]; // ð
-        case 0xF1: return glyphs[203]; // ñ
-        case 0xF2: return glyphs[204]; // ò
-        case 0xF3: return glyphs[205]; // ó
-        case 0xF4: return glyphs[206]; // ô
-        case 0xF5: return glyphs[207]; // õ
-        case 0xF6: return glyphs[208]; // ö
-        case 0xF7: return glyphs[209]; // ÷
-        case 0xF8: return glyphs[210]; // ø
-        case 0xF9: return glyphs[211]; // ù
-        case 0xFA: return glyphs[212]; // ú
-        case 0xFB: return glyphs[213]; // û
-        case 0xFC: return glyphs[214]; // ü
-        case 0xFD: return glyphs[215]; // ý
-        case 0xFE: return glyphs[216]; // þ
-        case 0xFF: return glyphs[217]; // ÿ
-
-        default:
-            return glyphs[44];
-    }
-}
-
-
-static char uppercase(char c)
-{
-    if (c >= 'a' && c <= 'z')
-        return (char)(c - 'a' + 'A');
-
-    return c;
+    uint32_t advance = (uint32_t)(outline.advance_width * glyph_scale + 0.5f);
+    return advance > 0 ? advance : MIN_ASSUMED_ADVANCE;
 }
 
 
@@ -452,27 +252,43 @@ void fb_put_pixel(
 
 int fbprint_init(uint64_t multiboot_info_addr)
 {
-    const char* fontPath = "/fonts/5x7.lfh";
-    uint8_t* fontBuffer = (uint8_t*)kmalloc(iso9660_get_file_size(fontPath));
-    uint32_t fontFileSize;
+    const char* fontPath = "/fonts/jbm.ttf";
+    uint32_t fontFileSize = iso9660_get_file_size(fontPath);
 
-    LFHHeader fontHeader;
-    if (iso9660_read_file(fontPath, fontBuffer, &fontFileSize)) {
-        if (validate_lfh_header(fontBuffer, fontFileSize, &fontHeader)) {
-            uint8_t* glyphsOut = fontBuffer + sizeof(LFHHeader);
-            memcpy(glyphs, glyphsOut, iso9660_get_file_size(fontPath) - sizeof(LFHHeader));
-        } else {
-            KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "INVALID LFH FILE", 1);
-        }
-    } else {
-        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "FAILED TO READ LFH FILE", 1);
+    // NOTE: this buffer is intentionally never freed. TTFFont::data
+    // (set by validate_ttf() below) points directly into these bytes,
+    // and every future glyph lookup (ttf_char_to_glyph/
+    // ttf_get_glyph_outline) dereferences through it -- unlike the old
+    // LFH bitmap font, which copied its (much smaller) glyph data into
+    // a static array and could free its source buffer immediately.
+    uint8_t* fontBuffer = (uint8_t*)kmalloc(fontFileSize);
+    uint32_t bytesRead;
+
+    if (!iso9660_read_file(fontPath, fontBuffer, &bytesRead)) {
+        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "FAILED TO READ TTF FILE", 1);
     }
-    kfree(fontBuffer);
+
+    if (!validate_ttf(fontBuffer, fontFileSize, &font)) {
+        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "INVALID TTF FILE", 1);
+    }
+
+    font_loaded = true;
+    glyph_scale = TTF_POINT_SIZE / (float)font.units_per_em;
+
+    // Baseline placement within a CHAR_HEIGHT-tall cell: leave a small
+    // margin above the ascent and below the descent so glyphs (and
+    // accents/descenders) don't touch adjacent rows. hhea's ascender/
+    // descender aren't parsed by ttf.c (not needed for glyph outlines
+    // themselves), so derive a reasonable line height directly from
+    // the requested point size instead.
+    CHAR_HEIGHT = (uint32_t)(TTF_POINT_SIZE * 1.3f + 0.5f);
+    glyph_baseline = TTF_POINT_SIZE * 1.05f;
 
     uint8_t* base =
         (uint8_t*)(uintptr_t)multiboot_info_addr;
 
     uint32_t total_size = *(uint32_t*)base;
+
 
     uint8_t* tag_ptr = base + 8;
     uint8_t* end = base + total_size;
@@ -605,88 +421,89 @@ void fbclear(void)
  * ============================================================
  */
 
-static void draw_glyph(
+static uint32_t draw_glyph(
     uint8_t c,
     uint32_t x,
     uint32_t y
 )
 {
-    const uint8_t* glyph =
-        get_glyph(c);
-
     struct RGBColor fg =
         color_palette[foreground_color];
 
     struct RGBColor bg =
         color_palette[background_color];
 
-    for (uint32_t row = 0;
-         row < FONT_HEIGHT;
-         row++) {
+    uint32_t advance = glyph_advance_width(c);
 
-        for (uint32_t col = 0;
-             col < FONT_WIDTH;
-             col++) {
-
-            uint8_t pixel =
-                glyph[row] &
-                (1u << (FONT_WIDTH - 1 - col));
-
-            uint8_t r;
-            uint8_t g;
-            uint8_t b;
-
-            if (pixel) {
-                r = fg.r;
-                g = fg.g;
-                b = fg.b;
-            } else {
-                r = bg.r;
-                g = bg.g;
-                b = bg.b;
-            }
-
-            for (uint32_t sy = 0;
-                 sy < FONT_SCALE;
-                 sy++) {
-
-                for (uint32_t sx = 0;
-                     sx < FONT_SCALE;
-                     sx++) {
-
-                    fb_put_pixel(
-                        x +
-                        col * FONT_SCALE +
-                        sx,
-
-                        y +
-                        row * FONT_SCALE +
-                        sy,
-
-                        r,
-                        g,
-                        b
-                    );
-                }
-            }
+    /*
+     * Clear the full cell first (background), including the space
+     * between glyph and next cursor position. Unlike the old
+     * fixed-width bitmap font, a glyph's own ink can be narrower or
+     * wider than its advance, and the previous character drawn at this
+     * same cell might have had a different (e.g. wider) advance -- so
+     * clear the whole line height x this glyph's advance width, not
+     * just the glyph's own bounding box.
+     */
+    for (uint32_t cy = y; cy < y + CHAR_HEIGHT; cy++) {
+        for (uint32_t cx = x; cx < x + advance; cx++) {
+            fb_put_pixel(cx, cy, bg.r, bg.g, bg.b);
         }
     }
 
-    /*
-     * Clear the spacing column.
-     */
-    for (uint32_t y2 = y;
-         y2 < y + FONT_HEIGHT * FONT_SCALE;
-         y2++) {
+    if (!font_loaded || c == ' ' || c == '\0')
+        return advance;
 
-        fb_put_pixel(
-            x + FONT_WIDTH * FONT_SCALE,
-            y2,
-            bg.r,
-            bg.g,
-            bg.b
-        );
+    uint16_t gid = ttf_char_to_glyph(&font, (uint32_t)c);
+
+    // static: see glyph_advance_width()'s identical comment -- both
+    // TTFGlyphOutline (~9.4KB) and the coverage buffer are far too
+    // large for stack locals, and this function is never reentrant.
+    static TTFGlyphOutline outline;
+    static uint8_t coverage[GLYPH_CELL_MAX * GLYPH_CELL_MAX];
+
+    if (!ttf_get_glyph_outline(&font, gid, &outline))
+        return advance;
+
+    if (outline.contour_count == 0)
+        return advance; // e.g. space, or a glyph with no visible ink
+
+    for (uint32_t i = 0; i < GLYPH_CELL_MAX * GLYPH_CELL_MAX; i++)
+        coverage[i] = 0;
+
+    ttf_rasterize_glyph(
+        &outline,
+        glyph_scale,
+        0.0f,
+        glyph_baseline,
+        coverage,
+        GLYPH_CELL_MAX,
+        GLYPH_CELL_MAX
+    );
+
+    for (uint32_t row = 0; row < GLYPH_CELL_MAX && row < CHAR_HEIGHT; row++) {
+        for (uint32_t col = 0; col < GLYPH_CELL_MAX; col++) {
+            uint8_t cov = coverage[row * GLYPH_CELL_MAX + col];
+            if (cov == 0)
+                continue; // fully transparent -- background already drawn above
+
+            uint8_t r, g, b;
+            if (cov >= 255) {
+                r = fg.r; g = fg.g; b = fg.b;
+            } else {
+                // Linear alpha blend: this is what actually produces
+                // anti-aliasing on screen -- partial coverage pixels
+                // become a mix of foreground and background, not a
+                // binary on/off choice.
+                r = (uint8_t)(((uint32_t)fg.r * cov + (uint32_t)bg.r * (255 - cov)) / 255);
+                g = (uint8_t)(((uint32_t)fg.g * cov + (uint32_t)bg.g * (255 - cov)) / 255);
+                b = (uint8_t)(((uint32_t)fg.b * cov + (uint32_t)bg.b * (255 - cov)) / 255);
+            }
+
+            fb_put_pixel(x + col, y + row, r, g, b);
+        }
     }
+
+    return advance;
 }
 
 
@@ -816,6 +633,35 @@ static void fb_newline(void)
 
 /*
  * ============================================================
+ * COLUMN -> PIXEL X (variable-width glyph advance)
+ * ============================================================
+ *
+ * With a fixed-width bitmap font, a column's pixel x was simply
+ * col * CHAR_WIDTH. TTF glyphs have per-character advance widths, so a
+ * row/col pair's actual pixel x is the sum of every character's
+ * advance width before it on that row -- reconstructed from
+ * text_buffer, the same logical record cursor movement/backspace
+ * already relied on for "what character is at this cell".
+ */
+
+static uint32_t x_for_col(uint32_t row, uint32_t col)
+{
+    if (row >= FB_MAX_ROWS)
+        return 0;
+
+    if (col > FB_MAX_COLS)
+        col = FB_MAX_COLS;
+
+    uint32_t x = 0;
+    for (uint32_t i = 0; i < col; i++) {
+        x += glyph_advance_width((uint8_t)text_buffer[row][i]);
+    }
+    return x;
+}
+
+
+/*
+ * ============================================================
  * CHARACTER OUTPUT
  * ============================================================
  */
@@ -872,9 +718,11 @@ void fbprintc(char character)
 
 
     /*
-     * Wrap at right edge.
+     * Wrap at right edge. Uses this specific glyph's real advance
+     * width, not a fixed CHAR_WIDTH -- a wide glyph might not fit even
+     * where a narrow one would have.
      */
-    if (cursor_x + CHAR_WIDTH >
+    if (cursor_x + glyph_advance_width((uint8_t)character) >
         framebuffer.width) {
 
         fb_newline();
@@ -890,7 +738,7 @@ void fbprintc(char character)
     }
 
 
-    draw_glyph(
+    uint32_t advance = draw_glyph(
         character,
         cursor_x,
         cursor_y
@@ -909,7 +757,7 @@ void fbprintc(char character)
 
 
     cursor_col++;
-    cursor_x += CHAR_WIDTH;
+    cursor_x += advance;
 }
 
 
@@ -1108,15 +956,22 @@ void fbdelete_last_char(void)
 
 
     cursor_x =
-        cursor_col * CHAR_WIDTH;
+        x_for_col(cursor_row, cursor_col);
 
     cursor_y =
         cursor_row * CHAR_HEIGHT;
 
 
     /*
-     * Erase the character.
+     * Erase the character. Uses the actual character still recorded at
+     * this cell's real advance width (about to be overwritten with a
+     * space below), not a fixed CHAR_WIDTH.
      */
+    uint32_t erase_width =
+        (cursor_row < FB_MAX_ROWS && cursor_col < FB_MAX_COLS)
+            ? glyph_advance_width((uint8_t)text_buffer[cursor_row][cursor_col])
+            : MIN_ASSUMED_ADVANCE;
+
     struct RGBColor bg =
         color_palette[background_color];
 
@@ -1126,7 +981,7 @@ void fbdelete_last_char(void)
          y++) {
 
         for (uint32_t x = cursor_x;
-             x < cursor_x + CHAR_WIDTH &&
+             x < cursor_x + erase_width &&
              x < framebuffer.width;
              x++) {
 
@@ -1168,8 +1023,14 @@ void fbmove_cursor(int row, int col)
     uint32_t max_rows =
         framebuffer.height / CHAR_HEIGHT;
 
+    // Conservative (upper-bound) column count, since advance width
+    // varies per glyph -- used only to keep `col` from being clamped
+    // to something absurd, not for actual layout.
     uint32_t max_cols =
-        framebuffer.width / CHAR_WIDTH;
+        framebuffer.width / MIN_ASSUMED_ADVANCE;
+
+    if (max_cols > FB_MAX_COLS)
+        max_cols = FB_MAX_COLS;
 
 
     if (max_rows == 0 ||
@@ -1190,7 +1051,7 @@ void fbmove_cursor(int row, int col)
     cursor_col = (uint32_t)col;
 
     cursor_x =
-        cursor_col * CHAR_WIDTH;
+        x_for_col(cursor_row, cursor_col);
 
     cursor_y =
         cursor_row * CHAR_HEIGHT;
@@ -1255,7 +1116,7 @@ void fbmove_cursor_left(void)
     }
 
     cursor_x =
-        cursor_col * CHAR_WIDTH;
+        x_for_col(cursor_row, cursor_col);
 
     cursor_y =
         cursor_row * CHAR_HEIGHT;
@@ -1265,7 +1126,10 @@ void fbmove_cursor_left(void)
 void fbmove_cursor_right(void)
 {
     uint32_t max_cols =
-        framebuffer.width / CHAR_WIDTH;
+        framebuffer.width / MIN_ASSUMED_ADVANCE;
+
+    if (max_cols > FB_MAX_COLS)
+        max_cols = FB_MAX_COLS;
 
     uint32_t max_rows =
         framebuffer.height / CHAR_HEIGHT;
@@ -1310,7 +1174,7 @@ void fbmove_cursor_right(void)
 
 
     cursor_x =
-        cursor_col * CHAR_WIDTH;
+        x_for_col(cursor_row, cursor_col);
 
     cursor_y =
         cursor_row * CHAR_HEIGHT;

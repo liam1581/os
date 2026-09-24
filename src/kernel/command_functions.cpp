@@ -733,6 +733,79 @@ int cmd_rm(ArgumentObject args) {
     return 0;
 }
 
+static bool get_fat_file_path(const char* command, ArgumentObject args, char* path) {
+    if (currentDrive != 'C') {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        print(command);
+        println(": only supported on the FAT drive (C:). Switch with cd \"C:/\".");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return false;
+    }
+    if (!fatInitialized) {
+        print_not_initialized(command, 'C');
+        return false;
+    }
+
+    ArgumentValue fileArg = args.getArgument("file");
+    if (!fileArg.isValid()) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        print(command);
+        println(": missing file argument");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return false;
+    }
+    strcat_s(path, FATcurrent_dir, (const char*)fileArg);
+    return true;
+}
+
+int cmd_clear_file(ArgumentObject args) {
+    char path[2048];
+    if (!get_fat_file_path("clear", args, path)) return 1;
+    if (!fat32_clear_file(path)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("clear: failed to clear file (not found or is a directory)");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    return 0;
+}
+
+static int write_file_contents(const char* command, ArgumentObject args, bool overwrite) {
+    char path[2048];
+    if (!get_fat_file_path(command, args, path)) return 1;
+
+    ArgumentValue textArg = args.getArgument("text");
+    if (!textArg.isValid()) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        print(command);
+        println(": missing text argument");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    const char* text = textArg;
+    uint32_t text_size = 0;
+    while (text[text_size] != '\0') text_size++;
+    bool ok = overwrite
+        ? fat32_overwrite_file(path, (const uint8_t*)text, text_size)
+        : fat32_append_file(path, (const uint8_t*)text, text_size);
+    if (!ok) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        print(command);
+        println(": failed to update file (not found or is a directory)");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    return 0;
+}
+
+int cmd_write_file(ArgumentObject args) {
+    return write_file_contents("write", args, false);
+}
+
+int cmd_overwrite_file(ArgumentObject args) {
+    return write_file_contents("overwrite", args, true);
+}
 int cmd_display_mem(ArgumentObject) {
     print_set_color(PRINT_COLOR_LIGHT_GRAY, PRINT_COLOR_BLACK);
     print("Memory: ");

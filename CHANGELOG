@@ -1,3 +1,16 @@
+12092026.1722-3.8-377 -- 24092026.1902-3.8-397:
+    - Added ttf rendering so LFH is currently not working BUT im working on making both work!
+        - Added the Regular JetBrainsMono font
+    - Added a fat32 file writing functions aswell as corrosponding commands
+    - Added tools directory with a ttf-to-lfh (version 1) script
+
+    - Changed LFH header by a lot
+        - Added variable header so the header actually only has the letters specified in the 3rd part of the header
+        - Working with offsets for the characters and MATH
+        - Also made a python script fir converting a list of bmp images to a LFH font (github: https://github.com/liam1518/LFH_font)
+
+    - Removed the mc folder in D:/images
+
 09092026.1846-3.7-367 -- 09092026.1942-3.7-376:
     - Changed every kind of #ifdef to #if defined()
     - Changed cmd_help to use DBG_PRINT instead of DBG_PRINTS

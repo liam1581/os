@@ -443,6 +443,39 @@ static bool update_dir_entry(uint32_t dir_cluster, uint32_t file_cluster, FAT32D
     return false;
 }
 
+// Update an 8.3 entry by its name. Matching by name is important for empty
+// files because their first cluster is zero and therefore not unique.
+static bool update_dir_entry_by_name(uint32_t dir_cluster, const char* filename, FAT32DirEntry* updated) {
+    uint8_t name[8], ext[3];
+    make_83_name(filename, name, ext);
+
+    uint32_t cluster = dir_cluster;
+    while (cluster < 0x0FFFFFF8) {
+        uint32_t lba = cluster_to_lba(cluster);
+        for (uint32_t s = 0; s < sectors_per_cluster; s++) {
+            if (!ata_read_sector(lba + s, sector_buf)) return false;
+            FAT32DirEntry* entries = (FAT32DirEntry*)sector_buf;
+            for (uint32_t i = 0; i < ATA_SECTOR_SIZE / 32; i++) {
+                FAT32DirEntry* entry = &entries[i];
+                if (entry->name[0] == 0xE5 || entry->attr == FAT32_ATTR_LFN) continue;
+
+                bool name_matches = true;
+                for (uint32_t j = 0; j < 8; j++) {
+                    if (entry->name[j] != name[j]) { name_matches = false; break; }
+                }
+                for (uint32_t j = 0; name_matches && j < 3; j++) {
+                    if (entry->ext[j] != ext[j]) { name_matches = false; break; }
+                }
+                if (!name_matches) continue;
+
+                *entry = *updated;
+                return ata_write_sector(lba + s, sector_buf);
+            }
+        }
+        cluster = fat_get_next_cluster(cluster);
+    }
+    return false;
+}
 // Free an entire cluster chain
 static void fat_free_chain(uint32_t cluster) {
     while (cluster < 0x0FFFFFF8 && cluster >= 2) {
@@ -521,52 +554,118 @@ bool fat32_create_dir(const char* path) {
     return result;
 }
 
-bool fat32_write_file(const char* path, const uint8_t* buffer, uint32_t size) {
-    if (!initialized) return false;
+bool fat32_overwrite_file(const char* path, const uint8_t* buffer, uint32_t size) {
+    if (!initialized || (size > 0 && buffer == 0)) return false;
     uint32_t parent; char filename[FAT32_MAX_FILENAME];
     if (!split_path(path, &parent, filename)) return false;
 
     uint32_t cluster; bool is_dir; uint32_t old_size;
-    if (!resolve_path(path, &cluster, &is_dir, &old_size)) return false;
-    if (is_dir) return false;
+    if (!resolve_path(path, &cluster, &is_dir, &old_size) || is_dir) return false;
 
-    // Free old chain and allocate fresh one
-    fat_free_chain(cluster);
-    uint32_t first_cluster = 0, prev_cluster = 0;
+    // A zero-length FAT32 file intentionally has no allocated cluster chain.
+    if (cluster >= 2) fat_free_chain(cluster);
+
+    FAT32DirEntry updated = {0};
+    make_83_name(filename, updated.name, updated.ext);
+    updated.attr = FAT32_ATTR_ARCHIVE;
+    if (size == 0) {
+        updated.size = 0;
+        return update_dir_entry_by_name(parent, filename, &updated);
+    }
+
+    uint32_t first_cluster = 0, previous_cluster = 0;
     uint32_t bytes_written = 0;
     uint32_t cluster_size = sectors_per_cluster * ATA_SECTOR_SIZE;
-
-    do {
+    while (bytes_written < size) {
         uint32_t new_cluster = fat_alloc_cluster();
         if (!new_cluster) return false;
         if (!first_cluster) first_cluster = new_cluster;
-        if (prev_cluster)   fat_set_next_cluster(prev_cluster, new_cluster);
+        if (previous_cluster && !fat_set_next_cluster(previous_cluster, new_cluster)) return false;
 
         uint32_t lba = cluster_to_lba(new_cluster);
         for (uint32_t s = 0; s < sectors_per_cluster; s++) {
             uint8_t tmp[ATA_SECTOR_SIZE] = {0};
             uint32_t offset = bytes_written + s * ATA_SECTOR_SIZE;
-            uint32_t to_copy = (offset < size) ? (size - offset) : 0;
+            uint32_t to_copy = offset < size ? size - offset : 0;
             if (to_copy > ATA_SECTOR_SIZE) to_copy = ATA_SECTOR_SIZE;
             for (uint32_t i = 0; i < to_copy; i++) tmp[i] = buffer[offset + i];
             if (!ata_write_sector(lba + s, tmp)) return false;
         }
-
         bytes_written += cluster_size;
-        prev_cluster   = new_cluster;
-    } while (bytes_written < size);
+        previous_cluster = new_cluster;
+    }
 
-    // Update directory entry with new cluster and size
-    FAT32DirEntry updated = {0};
-    make_83_name(filename, updated.name, updated.ext);
-    updated.attr         = FAT32_ATTR_ARCHIVE;
     updated.cluster_high = (uint16_t)(first_cluster >> 16);
     updated.cluster_low  = (uint16_t)(first_cluster & 0xFFFF);
     updated.size         = size;
-
-    return update_dir_entry(parent, cluster, &updated);
+    return update_dir_entry_by_name(parent, filename, &updated);
 }
 
+bool fat32_clear_file(const char* path) {
+    return fat32_overwrite_file(path, 0, 0);
+}
+
+bool fat32_append_file(const char* path, const uint8_t* buffer, uint32_t size) {
+    if (!initialized || (size > 0 && buffer == 0)) return false;
+    if (size == 0) return true;
+
+    uint32_t parent; char filename[FAT32_MAX_FILENAME];
+    if (!split_path(path, &parent, filename)) return false;
+
+    uint32_t cluster; bool is_dir; uint32_t old_size;
+    if (!resolve_path(path, &cluster, &is_dir, &old_size) || is_dir) return false;
+    if (old_size == 0 || cluster < 2) return fat32_overwrite_file(path, buffer, size);
+
+    uint32_t cluster_size = sectors_per_cluster * ATA_SECTOR_SIZE;
+    uint32_t last_cluster = cluster;
+    uint32_t next = fat_get_next_cluster(last_cluster);
+    while (next < 0x0FFFFFF8) {
+        last_cluster = next;
+        next = fat_get_next_cluster(last_cluster);
+    }
+
+    uint32_t bytes_written = 0;
+    uint32_t offset_in_cluster = old_size % cluster_size;
+    uint32_t active_cluster = last_cluster;
+    if (offset_in_cluster == 0) {
+        active_cluster = fat_alloc_cluster();
+        if (!active_cluster || !fat_set_next_cluster(last_cluster, active_cluster)) return false;
+    }
+
+    while (bytes_written < size) {
+        uint32_t sector_index = offset_in_cluster / ATA_SECTOR_SIZE;
+        uint32_t byte_index = offset_in_cluster % ATA_SECTOR_SIZE;
+        uint32_t lba = cluster_to_lba(active_cluster) + sector_index;
+        if (!ata_read_sector(lba, sector_buf)) return false;
+
+        uint32_t available = ATA_SECTOR_SIZE - byte_index;
+        uint32_t to_copy = size - bytes_written;
+        if (to_copy > available) to_copy = available;
+        for (uint32_t i = 0; i < to_copy; i++) sector_buf[byte_index + i] = buffer[bytes_written + i];
+        if (!ata_write_sector(lba, sector_buf)) return false;
+
+        bytes_written += to_copy;
+        offset_in_cluster += to_copy;
+        if (offset_in_cluster == cluster_size && bytes_written < size) {
+            uint32_t new_cluster = fat_alloc_cluster();
+            if (!new_cluster || !fat_set_next_cluster(active_cluster, new_cluster)) return false;
+            active_cluster = new_cluster;
+            offset_in_cluster = 0;
+        }
+    }
+
+    FAT32DirEntry updated = {0};
+    make_83_name(filename, updated.name, updated.ext);
+    updated.attr         = FAT32_ATTR_ARCHIVE;
+    updated.cluster_high = (uint16_t)(cluster >> 16);
+    updated.cluster_low  = (uint16_t)(cluster & 0xFFFF);
+    updated.size         = old_size + size;
+    return update_dir_entry_by_name(parent, filename, &updated);
+}
+
+bool fat32_write_file(const char* path, const uint8_t* buffer, uint32_t size) {
+    return fat32_overwrite_file(path, buffer, size);
+}
 bool fat32_rename(const char* path, const char* new_name) {
     if (!initialized) return false;
     uint32_t parent; char filename[FAT32_MAX_FILENAME];

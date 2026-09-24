@@ -373,6 +373,20 @@ void Commands::registerCommands() {
     argument<const char*>("del", "file");
     executes("del", cmd_rm);
 
+    add("clear", 1);
+    argument<const char*>("clear", "file");
+    executes("clear", cmd_clear_file);
+
+    add("write", 2);
+    argument<const char*>("write", "file");
+    argument<const char*>("write", "text");
+    executes("write", cmd_write_file);
+
+    add("overwrite", 2);
+    argument<const char*>("overwrite", "file");
+    argument<const char*>("overwrite", "text");
+    executes("overwrite", cmd_overwrite_file);
+    
     add("display_mem", 0);
     executes("display_mem", cmd_display_mem);
 
@@ -396,6 +410,9 @@ void Commands::registerCommands() {
     helpMessage("cp", R"( "src" "destination" - Copies a file (C: drive only))");
     helpMessage("mv", R"( "src" "destination" - Moves/renames a file (C: drive only))");
     helpMessage("rm", "/del \"file\" - Deletes a file (C: drive only)");
+    helpMessage("clear", " \"file\" - Removes all file contents (C: drive only)");
+    helpMessage("write", R"( "file" "text" - Appends text to a file (C: drive only))");
+    helpMessage("overwrite", R"( "file" "text" - Replaces all file contents (C: drive only))");
     helpMessage("display_mem", " - displays memory usage");
     helpMessage("ver", " - Displays the kernel version");
     helpMessage("TESTING", " - Causes kernel panic because no function is defined");

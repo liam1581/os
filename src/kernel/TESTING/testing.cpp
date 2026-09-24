@@ -33,11 +33,9 @@ extern "C" void kernel_testing() {
 
     cmd_atapi_init(NullArgument);
     cmd_fat_init(NullArgument);
-    
-    bmpTestingMain();
 
     print("> ");
-    
+ 
     keyboard_init();
     keyboard_set_handler(testing_handle_input);
 
