@@ -20,35 +20,23 @@ static size_t align_up(size_t n, size_t a) {
 
 // Pulls fresh physical frames from the PMM (identity-mapped, so physical
 // addresses double as usable pointers) and turns them into one new free
-// block. Frames are requested one at a time and kept only while they land
-// back-to-back; on a freshly booted system pmm_alloc_frame() hands out
-// frames in order, so this reliably yields a contiguous run. If growth is
-// interrupted by a non-contiguous frame, the returned block is just
-// smaller than requested rather than failing outright.
+// block. pmm_alloc_contiguous() guarantees a single physically contiguous
+// run, so this always fully satisfies `min_size` in one call -- it can
+// only fail outright (return NULL) if no run of that many frames exists.
 static block_header_t* grow_heap(size_t min_size) {
     size_t needed = min_size + sizeof(block_header_t);
     size_t pages = (needed + PMM_FRAME_SIZE - 1) / PMM_FRAME_SIZE;
     if (pages < GROW_PAGES) pages = GROW_PAGES;
 
-    uint64_t base = pmm_alloc_frame();
+    uint64_t base = pmm_alloc_contiguous(pages);
     if (base == 0) return NULL;
 
-    uint64_t got = 1;
-    for (; got < pages; got++) {
-        uint64_t next = pmm_alloc_frame();
-        if (next == 0) break;
-        if (next != base + got * PMM_FRAME_SIZE) {
-            pmm_free_frame(next);
-            break;
-        }
-    }
-
     block_header_t* block = (block_header_t*)(uintptr_t)base;
-    block->size = got * PMM_FRAME_SIZE - sizeof(block_header_t);
+    block->size = pages * PMM_FRAME_SIZE - sizeof(block_header_t);
     block->free = 1;
     block->next = NULL;
 
-    capacity_bytes += got * PMM_FRAME_SIZE;
+    capacity_bytes += pages * PMM_FRAME_SIZE;
     return block;
 }
 

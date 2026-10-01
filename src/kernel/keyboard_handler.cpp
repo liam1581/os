@@ -6,6 +6,7 @@
 extern "C" {
     #include "print.h"
     #include "drivers/power.h"
+    #include "log.h"
 }
 
 bool capsLockActive = false;

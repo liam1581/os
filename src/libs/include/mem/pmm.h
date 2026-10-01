@@ -7,6 +7,8 @@ void pmm_init(uint64_t multiboot_info_addr);
 
 uint64_t pmm_alloc_frame();
 
+uint64_t pmm_alloc_contiguous(uint64_t count);
+
 void pmm_free_frame(uint64_t phys_addr);
 
 uint64_t pmm_total_memory_bytes();

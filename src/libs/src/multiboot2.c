@@ -1,5 +1,5 @@
 #include "multiboot2.h"
-#include "debug.h"
+#include "log.h"
 #include "print.h"
 
 #include <stddef.h>
@@ -46,11 +46,7 @@ struct multiboot_tag_framebuffer_common* multiboot2_find_framebuffer(uint64_t mu
     while (tag_ptr < end) {
         struct multiboot_tag* tag = (struct multiboot_tag*)tag_ptr;
 
-        print("Multiboot tag: ");
-        print_uint64_dec(tag->type);
-        print(" size: ");
-        print_uint64_dec(tag->size);
-        printc('\n');
+        INF_PRINTF("Multiboot tag %d size %d\n", tag->type, tag->size);
         
         /* * End tag. */
         if (tag->type == MULTIBOOT_TAG_TYPE_END) {
@@ -59,7 +55,7 @@ struct multiboot_tag_framebuffer_common* multiboot2_find_framebuffer(uint64_t mu
         
         /* * Framebuffer found. */
         if (tag->type == MULTIBOOT_TAG_TYPE_FRAMEBUFFER) {
-            DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "FRAMEBUFFER TAG FOUND");
+            INF_PRINT("FRAMEBUFFER TAG FOUND");
 
             return (struct multiboot_tag_framebuffer_common*)tag_ptr;
         }
@@ -67,7 +63,7 @@ struct multiboot_tag_framebuffer_common* multiboot2_find_framebuffer(uint64_t mu
         /* * Move to next 8-byte-aligned tag. */
         tag_ptr += multiboot2_align8(tag->size);
     }
-    DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "NO FRAMEBUFFER TAG FOUND");
+    ERR_PRINT("NO FRAMEBUFFER TAG FOUND");
 
     return NULL;
 }
@@ -76,43 +72,26 @@ struct multiboot_tag_framebuffer_rgb* multiboot2_find_framebuffer_rgb(uint64_t m
     struct multiboot_tag_framebuffer_common* framebuffer = multiboot2_find_framebuffer(multiboot_info_addr);
     
     if (framebuffer == NULL) {
-        DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "NO FRAMEBUFFER TAG FOUND");
+        ERR_PRINT("NO FRAMEBUFFER TAG FOUND");
 
         return NULL;
     }
 
-    print("Framebuffer type: ");
-    print_uint64_dec(framebuffer->framebuffer_type);
-    printc('\n');
-
-    print("Framebuffer address: ");
-    print_uint64_hex(framebuffer->framebuffer_addr);
-    printc('\n');
-
-    print("Framebuffer width: ");
-    print_uint64_dec(framebuffer->framebuffer_width);
-    printc('\n');
-
-    print("Framebuffer height: ");
-    print_uint64_dec(framebuffer->framebuffer_height);
-    printc('\n');
-
-    print("Framebuffer pitch: ");
-    print_uint64_dec(framebuffer->framebuffer_pitch);
-    printc('\n');
-
-    print("Framebuffer BPP: ");
-    print_uint64_dec(framebuffer->framebuffer_bpp);
-    printc('\n');
+    INF_PRINTF("fb_type=%d\n", framebuffer->framebuffer_type);
+    INF_PRINTF("fb_addr=0x%x\n", framebuffer->framebuffer_addr);
+    INF_PRINTF("fb_width=%d\n", framebuffer->framebuffer_width);
+    INF_PRINTF("fb_height=%d\n", framebuffer->framebuffer_height);
+    INF_PRINTF("fb_pitch=%d\n", framebuffer->framebuffer_pitch);
+    INF_PRINTF("fb_bpp=%d\n", framebuffer->framebuffer_bpp);
     
     /* * Make sure this is an RGB framebuffer. */
     if (framebuffer->framebuffer_type != MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {
-        DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "FRAMEBUFFER IS NOT RGB");
+        ERR_PRINT("FRAMEBUFFER IS NOT RGB");
         
         return NULL;
     }
     
-    DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "FRAMEBUFFER IS RGB");
+    INF_PRINT("FRAMEBUFFER IS RGB");
     
     return (struct multiboot_tag_framebuffer_rgb*)framebuffer;
 }

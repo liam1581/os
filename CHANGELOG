@@ -1,3 +1,24 @@
+24092026.1913-3.8-398 -- 01102026.2024-3.9-482:
+    - Went back to Makefile
+    - Added better logging
+        - Moved debug.h/debug.c and krnl.h/krnl.c into log.h and added more stuff
+    - Added printf (fbprint/print/serial/debug)
+    - Added a way to get the current date (i think it just works in qemu currently)
+    - Added helpMessage for help
+    - Added syscalls and demo program on cd for syscalls [SYSCALLS ARE CURRENTLY STILL BROKEN, IM WORKING ON FIXING THEM]
+    - Added exception handling so qemu doesnt just restart once something goes wrong
+    - Added blinking cursor
+    - Added uint64_to_str function in string.h
+    
+    - Fixed bug where pmm.c failed to allocate ram fast enough for font loading
+
+    - PLANNED cosl (Custom OS Language) that can be written and compiled/interpreted while running the OS
+
+    BUGS:
+        - When your cursor is at the complete bottom of the screen and you hit backspace it travels up a line, the command/command buffer doesnt corrupt or anything, just a visual bug
+        - When you type after hitting enter in grub or exit (press ctrl+alt+g) qemu's typing thingy, keyboard reading breaks, it fails to init the keyboard and assign the keyboard handler [working on a fix]
+        - Sometimes the background color of a command output randomly changes for some reason
+
 12092026.1722-3.8-377 -- 24092026.1902-3.8-397:
     - Added ttf rendering so LFH is currently not working BUT im working on making both work!
         - Added the Regular JetBrainsMono font

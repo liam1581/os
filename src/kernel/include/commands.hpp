@@ -3,7 +3,7 @@
 #include <stddef.h>
 
 extern "C" {
-    #include "krnl.h"
+    #include "log.h"
 }
 
 #define MAX_COMMANDS 256
@@ -58,7 +58,7 @@ public:
             
             if (commands[i].argumentCount >= MAX_ARGUMENTS ||
                 commands[i].argumentCount >= commands[i].argCount) {
-                KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "TOO MANY ARGUMENTS DEFINED!", 1);
+                KERNEL_PANIC("TOO MANY ARGUMENTS DEFINED!", 1);
                 return;
             }
 
@@ -76,7 +76,7 @@ public:
             }
 
             if (!typeKnown) {
-                KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "TRYING TO DEFINE UNKNOWN ARGUMENT TYPE", 1);
+                KERNEL_PANIC("TRYING TO DEFINE UNKNOWN ARGUMENT TYPE", 1);
                 return;
             }
 

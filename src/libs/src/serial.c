@@ -1,4 +1,6 @@
 #include <stddef.h>
+#include <stdarg.h>
+#include <stdint.h>
 
 #include "drivers/serial.h"
 #include "x86_64/port.h"
@@ -61,6 +63,162 @@ void serial_write(const char* str) {
 void serial_writeln(const char* str) {
     serial_write(str);
     serial_write("\r\n");
+}
+
+
+static uint32_t parse_number(const char **str) {
+    uint32_t value = 0;
+    
+    while (**str >= '0' && **str <= '9') {
+        value = value * 10 + (**str - '0');
+        (*str)++;
+    }
+    
+    return value;
+}
+
+void serial_writef(const char* fmt, ...) {
+    va_list args;
+
+    va_start(args, fmt);
+
+    while (*fmt) {
+        if (*fmt != '%') {
+            serial_write_byte(*fmt);
+            fmt++;
+            continue;
+        }
+
+        fmt++;
+
+        if (*fmt == '\0') {
+            break;
+        }
+
+        switch (*fmt) {
+            case '%': {
+                serial_write_byte('%');
+                break;
+            }
+
+            case 'c': {
+                serial_write_byte((char)va_arg(args, int));
+                break;
+            }
+
+            case 's': {
+                serial_write(va_arg(args, const char*));
+                break;
+            }
+
+            case 'd':
+            case 'i': {
+                serial_write_int64_dec(va_arg(args, int));
+                break;
+            }
+
+            case 'u': {
+                serial_write_uint64_dec(va_arg(args, unsigned int));
+                break;
+            }
+
+            case 'x': {
+                serial_write_uint64_hex(va_arg(args, unsigned int));
+                break;
+            }
+
+            case 'p': {
+                serial_write("0x");
+                serial_write_uint64_hex((uint64_t)va_arg(args, void*));
+                break;
+            }
+
+            default: {
+                serial_write_byte('%');
+                serial_write_byte(*fmt);
+                break;
+            }
+
+        }
+
+        fmt++;
+    }
+
+    va_end(args);
+}
+void serial_vwritef(const char* fmt, va_list args) {
+    while (*fmt) {
+        if (*fmt != '%') {
+            serial_write_byte(*fmt);
+            fmt++;
+            continue;
+        }
+
+        fmt++;
+
+        if (*fmt == '\0') {
+            break;
+        }
+
+        switch (*fmt) {
+            case '%': {
+                serial_write_byte('%');
+                break;
+            }
+
+            case 'c': {
+                serial_write_byte((char)va_arg(args, int));
+                break;
+            }
+
+            case 's': {
+                serial_write(va_arg(args, const char*));
+                break;
+            }
+
+            case 'd':
+            case 'i': {
+                serial_write_int64_dec(va_arg(args, int));
+                break;
+            }
+
+            case 'u': {
+                serial_write_uint64_dec(va_arg(args, unsigned int));
+                break;
+            }
+
+            case 'x': {
+                serial_write_uint64_hex(va_arg(args, unsigned int));
+                break;
+            }
+
+            case 'p': {
+                serial_write("0x");
+                serial_write_uint64_hex((uint64_t)va_arg(args, void*));
+                break;
+            }
+
+            default: {
+                serial_write_byte('%');
+                serial_write_byte(*fmt);
+                break;
+            }
+
+        }
+
+        fmt++;
+    }
+
+    va_end(args);
+}
+
+void serial_write_int64_dec(int64_t value) {
+    if (value < 0) {
+        serial_write_byte('-');
+        serial_write_uint64_dec((uint64_t)(-(value + 1)) + 1);
+    } else {
+        serial_write_uint64_dec((uint64_t)value);
+    }
 }
 
 void serial_write_uint64_dec(uint64_t value) {

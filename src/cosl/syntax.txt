@@ -1,0 +1,13 @@
+c like syntax using "(", "{" and ";"
+
+currently supported things are:
+    print("text");
+    print(number);
+    println("text");
+    println(number);
+
+    print:error("error text");
+    println:error("error text");
+    exit(number);   [anything over 1 is an error]
+    
+    // comments

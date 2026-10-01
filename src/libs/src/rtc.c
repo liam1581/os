@@ -39,3 +39,8 @@ uint8_t rtc_seconds() {
     
     return seconds_b;
 }
+
+uint8_t cmos_read(uint8_t reg) {
+    port_outb(0x70, reg);
+    return port_inb(0x71);
+}

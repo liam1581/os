@@ -109,7 +109,6 @@ typedef struct {
     // ATAPI
     bool (*atapi_init)();
     bool (*atapi_read_sector)(uint32_t lba, uint8_t* buffer);
-
 } KernelAPI;
 
 #define LHE_ENTRY __attribute__((section(".text.entry")))

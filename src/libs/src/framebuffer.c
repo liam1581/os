@@ -3,7 +3,7 @@
 #include "print.h"
 
 #include "multiboot2.h"
-#include "debug.h"
+#include "log.h"
 
 #include <stddef.h>
 
@@ -96,9 +96,7 @@ bool framebuffer_init(uint64_t multiboot_info_addr)
         );
 
     if (fb == NULL) {
-        DBG_PRINTLNS(
-            "Framebuffer: no RGB framebuffer found"
-        );
+        FATAL_PRINT("Framebuffer: no RGB framebuffer found");
 
         framebuffer_available = false;
         return false;
@@ -154,9 +152,7 @@ bool framebuffer_init(uint64_t multiboot_info_addr)
         framebuffer_bpp != 24 &&
         framebuffer_bpp != 32) {
 
-        DBG_PRINTLNS(
-            "Framebuffer: unsupported BPP"
-        );
+        FATAL_PRINT("Framebuffer: unsupported BPP");
 
         framebuffer_available = false;
         return false;
@@ -165,9 +161,7 @@ bool framebuffer_init(uint64_t multiboot_info_addr)
 
     framebuffer_available = true;
 
-    DBG_PRINTLNS(
-        "Framebuffer initialized"
-    );
+    INF_PRINT("Framebuffer initialized");
 
     return true;
 }
@@ -286,17 +280,17 @@ bool framebuffer_draw_bmp(
     int32_t height
 ) {
     if (!framebuffer_available) {
-        println("FRAMEBUFFER UNAVAILABLE");
+        FATAL_PRINT("FRAMEBUFFER UNAVAILABLE");
         return false;
     }
 
     if (pixels == NULL) {
-        println("PIXEL DATA IS NULL");
+        FATAL_PRINT("PIXEL DATA IS NULL");
         return false;
     }
 
     if (width == 0 || height == 0) {
-        println("WIDTH OR HEIGHT IS ZERO");
+        FATAL_PRINT("WIDTH OR HEIGHT IS ZERO");
         return false;
     }
 
@@ -418,17 +412,17 @@ bool framebuffer_draw_png(
     bool has_alpha
 ) {
     if (!framebuffer_available) {
-        println("FRAMEBUFFER UNAVAILABLE");
+        FATAL_PRINT("FRAMEBUFFER UNAVAILABLE");
         return false;
     }
 
     if (pixels == NULL) {
-        println("PIXEL DATA IS NULL");
+        FATAL_PRINT("PIXEL DATA IS NULL");
         return false;
     }
 
     if (width == 0 || height == 0) {
-        println("WIDTH OR HEIGHT IS 0");
+        FATAL_PRINT("WIDTH OR HEIGHT IS 0");
         return false;
     }
 

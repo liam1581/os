@@ -5,6 +5,8 @@
 #include "x86_64/port.h"
 
 #include <stddef.h>
+#include <stdint.h>
+#include <stdarg.h>
 
 #define VGA_CTRL_PORT 0x3D4
 #define VGA_DATA_PORT 0x3D5
@@ -130,6 +132,112 @@ void println(const char* str) {
     printc('\n');
 }
 
+static uint32_t parse_number(const char **str) {
+    uint32_t value = 0;
+    
+    while (**str >= '0' && **str <= '9') {
+        value = value * 10 + (**str - '0');
+        (*str)++;
+    }
+    
+    return value;
+}
+
+void printf(const char* fmt, ...) {
+    va_list args;
+
+    va_start(args, fmt);
+
+    while (*fmt) {
+        if (*fmt != '%') {
+            printc(*fmt);
+            fmt++;
+            continue;
+        }
+
+        fmt++;
+
+        if (*fmt == '\0') {
+            break;
+        }
+
+        switch (*fmt) {
+            case '%': {
+                printc('%');
+                break;
+            }
+
+            case 'c': {
+                printc((char)va_arg(args, int));
+                break;
+            }
+
+            case 's': {
+                print(va_arg(args, const char*));
+                break;
+            }
+
+            case 'd':
+            case 'i': {
+                print_int64_dec(va_arg(args, int));
+                break;
+            }
+
+            case 'u': {
+                print_uint64_dec(va_arg(args, unsigned int));
+                break;
+            }
+
+            case 'x': {
+                print_uint64_hex(va_arg(args, unsigned int));
+                break;
+            }
+
+            case 'p': {
+                print("0x");
+                print_uint64_hex((uint64_t)va_arg(args, void*));
+                break;
+            }
+
+            case 'C': {
+                fmt++;
+
+                uint32_t foreground = parse_number(&fmt);
+
+                if (*fmt != ',') {
+                    print("%C");
+                    break;
+                }
+
+                fmt++;
+
+                uint32_t background = parse_number(&fmt);
+
+                if (foreground > 15 || background >> 15) {
+                    print("%C");
+                    break;
+                }
+
+                print_set_color((uint8_t)foreground, (uint8_t)background);
+
+                fmt--;
+                break;
+            }
+
+            default: {
+                printc('%');
+                printc(*fmt);
+                break;
+            }
+
+        }
+
+        fmt++;
+    }
+
+    va_end(args);
+}
+
 void print_set_color(uint8_t foreground, uint8_t background) {
     if (framebuffer_is_available()) {
         fbprint_set_color(foreground, background);
@@ -137,6 +245,15 @@ void print_set_color(uint8_t foreground, uint8_t background) {
     }
 
     color = foreground + (background << 4);
+}
+
+static void print_int64_dec(int64_t value) {
+    if (value < 0) {
+        printc('-');
+        print_uint64_dec((uint64_t)(-(value + 1)) + 1);
+    } else {
+        print_uint64_dec((uint64_t)value);
+    }
 }
 
 void print_uint64_dec(uint64_t value) {

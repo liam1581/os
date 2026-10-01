@@ -9,8 +9,6 @@ extern "C" {
 
     #include "x86_64/port.h"
     #include "mem/mem.h"
-
-    #include "krnl.h"
 }
 
 extern "C" void kernel_testing() {  
@@ -20,16 +18,9 @@ extern "C" void kernel_testing() {
     println("ALL FEATURES THAT ARE AVAILABLE HERE ARE UNDER CONSTRUCTION AND NOT FINISHED!");
     println("PLEASE SELECT THE PRODUCTION VERSION OF THE KERNEL IN GRUB\n");
 
-    print_set_color(PRINT_COLOR_LIGHT_GRAY, PRINT_COLOR_BLACK);
-    print("Memory: ");
-    print_uint64_dec(pmm_free_memory_bytes() / 1024 / 1024);
-    print(" / ");
-    print_uint64_dec(pmm_total_memory_bytes() / 1024 / 1024);
-    println(" MiB free");
-    print("        ");
-    print_uint64_dec((pmm_total_memory_bytes() - pmm_free_memory_bytes()) / 1024 / 1024);
-    println(" MiB used\n");
-    print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+    printf("%C7,0Memory: %u / %u MiB free\n", pmm_free_memory_bytes() / 1024 / 1024, pmm_total_memory_bytes() / 1024 / 1024);
+    printf("        %u MiB used\n\n%C15,0", (pmm_total_memory_bytes() - pmm_free_memory_bytes()) / 1024 / 1024);
+
 
     cmd_atapi_init(NullArgument);
     cmd_fat_init(NullArgument);

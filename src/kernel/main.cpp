@@ -26,16 +26,8 @@ void cpp_main() {
     }
     print("\n\n");
 
-    print_set_color(PRINT_COLOR_LIGHT_GRAY, PRINT_COLOR_BLACK);
-    print("Memory: ");
-    print_uint64_dec(pmm_free_memory_bytes() / 1024 / 1024);
-    print(" / ");
-    print_uint64_dec(pmm_total_memory_bytes() / 1024 / 1024);
-    println(" MiB free");
-    print("        ");
-    print_uint64_dec((pmm_total_memory_bytes() - pmm_free_memory_bytes()) / 1024 / 1024);
-    println(" MiB used\n");
-    print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
+    printf("%C7,0Memory: %u / %u MiB free\n", pmm_free_memory_bytes() / 1024 / 1024, pmm_total_memory_bytes() / 1024 / 1024);
+    printf("        %u MiB used\n\n", (pmm_total_memory_bytes() - pmm_free_memory_bytes()) / 1024 / 1024);
 
     commands.registerCommands();
 
@@ -48,5 +40,7 @@ void cpp_main() {
     keyboard_init();
     keyboard_set_handler(handle_input);
 
-    while (true) {}
+    while (true) {
+        fbcursor_poll();
+    }
 }

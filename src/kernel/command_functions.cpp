@@ -3,7 +3,7 @@
 extern "C" {
     #include "print.h"
     #include "string.h"
-    #include "debug.h"
+    #include "log.h"
     
     #include "drivers/storage/atapi.h"
     #include "drivers/storage/ata.h"
@@ -85,11 +85,7 @@ int cmd_help(ArgumentObject args) {
         println("Available commands:");
         for (int i = 0; i < commands.getCommandsCount(); i++) {
             if (commands.getCommands()[i].helpMessage == nullptr) {
-                char* msg = (char*)kmalloc(256);
-                strcat_s(msg, "Command ", commands.getCommands()[i].name);
-                strcat_s(msg, msg, " has no help message!");
-                DBG_PRINT(__FILE_NAME__, __FUNCTION__, __LINE__, msg);
-                kfree(msg);
+                INF_PRINTF("Command %s has no help message!\n", commands.getCommands()[i].name);
             } else {
                 print("  ");
                 print(commands.getCommands()[i].name);
@@ -180,29 +176,22 @@ int cmd_serial_write(ArgumentObject args) {
 
 int cmd_atapi_init(ArgumentObject) {
     if (!atapi_init()) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("No CD drive found!");
-        DBG_PRINTLNS("NO CD DRIVE FOUND!");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        printf("%C4,0No CD drive found!\n");
+        ERR_PRINT("NO CD DRIVE FOUND!");
         return 1;
     } else {
-        print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
-        DBG_PRINTLNS("ATAPI CD drive initialized successfully.");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        INF_PRINT("ATAPI CD drive initialized successfully.");
     }
     if (!iso9660_init()) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("Failed to read ISO filesystem!");
-        DBG_PRINTLNS("FAILED TO READ ISO FILESYSTEM!");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        printf("%C4,0Failed to read ISO filesystem!\n");
+        ERR_PRINT("FAILED TO READ ISO FILESYSTEM!");
         return 1;
     } else {
-        print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
-        DBG_PRINTLNS("ISO9660 filesystem initialized successfully.");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        INF_PRINT("ISO9660 filesystem initialized successfully.");
     }
     cdInitialized = true;
-
+    
+    print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
     return 0;
 }
 
@@ -504,20 +493,20 @@ int cmd_fat_init(ArgumentObject) {
     if (!ata_init()) {
         print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
         println("No ATA disk found!");
-        DBG_PRINTLNS("NO ATA DISK FOUND!");
+        ERR_PRINT("NO ATA DISK FOUND!");
         return 1;
     } else {
         print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
-        DBG_PRINTLNS("ATA disk found!");
+        INF_PRINT("ATA disk found!");
     }
     if (!fat32_init()) {
         print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
         println("FAT32 init failed!");
-        DBG_PRINTLNS("FAT32 INIT FAILED!");
+        ERR_PRINT("FAT32 INIT FAILED!");
         return 1;
     } else {
         print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
-        DBG_PRINTLNS("FAT32 disk ready!");
+        INF_PRINT("FAT32 disk ready!");
     }
     print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
     fatInitialized = true;

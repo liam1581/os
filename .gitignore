@@ -11,7 +11,6 @@ vault/
 
 *.zip
 qemu-crash.log
-Makefile
 tools/__pycache__/
 
 targets/x86_64/iso/boot/kernel_kernelpanic.bin

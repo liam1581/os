@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <stdarg.h>
 
 #define SERIAL_BAUD_115200 115200
 #define SERIAL_BAUD_57600 57600
@@ -11,6 +12,9 @@ void serial_init(uint32_t baud);
 void serial_write_byte(uint8_t byte);
 void serial_write(const char* str);
 void serial_writeln(const char* str);
+void serial_writef(const char* fmt, ...);
+void serial_vwritef(const char* fmt, va_list args);
+void serial_write_int64_dec(int64_t value);
 void serial_write_uint64_dec(uint64_t value);
 void serial_write_uint64_hex(uint64_t value);
 void serial_write_uint64_bin(uint64_t value);

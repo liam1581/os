@@ -1,7 +1,7 @@
 #include "drivers/files/os/ttf.h"
 
 #include <stddef.h>
-#include "debug.h"
+#include "log.h"
 
 /* ------------------------------------------------------------------ */
 /* Big-endian reads -- every multi-byte field in an sfnt file is BE     */
@@ -64,7 +64,13 @@ static bool find_table(const uint8_t* data, uint32_t size, uint32_t tag, uint32_
 
 bool validate_ttf(const uint8_t* data, uint32_t size, TTFFont* font) {
     if (!data || !font || size < 12) {
-        DBG_PRINTLNS("validate_ttf: FAIL null/too-small");
+        FATAL_PRINT("validate_ttf: FAIL null/too-small");
+        if (!data)
+            DBG_PRINT("!data");
+        if (!font)
+            DBG_PRINT("!font");
+        if (size < 12)
+            DBG_PRINT("size < 12");
         return false;
     }
 
@@ -82,36 +88,36 @@ bool validate_ttf(const uint8_t* data, uint32_t size, TTFFont* font) {
 
     uint32_t head_len, maxp_len;
     if (!find_table(data, size, TAG('h','e','a','d'), &font->head_offset, &head_len)) {
-        DBG_PRINTLNS("validate_ttf: FAIL no head table (bad sfnt version / table directory?)");
+        FATAL_PRINT("no head table (bad sfnt version / table directory?)");
         return false;
     }
     if (head_len < 54) {
-        DBG_PRINTLNS("validate_ttf: FAIL head table too short");
+        FATAL_PRINT("head table too short");
         return false;
     }
 
     if (!find_table(data, size, TAG('m','a','x','p'), &font->maxp_offset, &maxp_len)) {
-        DBG_PRINTLNS("validate_ttf: FAIL no maxp table");
+        FATAL_PRINT("no maxp table");
         return false;
     }
     if (maxp_len < 6) {
-        DBG_PRINTLNS("validate_ttf: FAIL maxp table too short");
+        FATAL_PRINT("maxp table too short");
         return false;
     }
 
     if (!find_table(data, size, TAG('l','o','c','a'), &font->loca_offset, &font->loca_length)) {
-        DBG_PRINTLNS("validate_ttf: FAIL no loca table (CFF/OTTO font? not supported)");
+        FATAL_PRINT("no loca table (CFF/OTTO font? not supported)");
         return false;
     }
     if (!find_table(data, size, TAG('g','l','y','f'), &font->glyf_offset, &font->glyf_length)) {
-        DBG_PRINTLNS("validate_ttf: FAIL no glyf table (CFF/OTTO font? not supported)");
+        FATAL_PRINT("no glyf table (CFF/OTTO font? not supported)");
         return false;
     }
 
     {
         uint32_t cmap_len;
         if (!find_table(data, size, TAG('c','m','a','p'), &font->cmap_offset, &cmap_len)) {
-            DBG_PRINTLNS("validate_ttf: FAIL no cmap table");
+            FATAL_PRINT("no cmap table");
             return false;
         }
     }
@@ -119,13 +125,13 @@ bool validate_ttf(const uint8_t* data, uint32_t size, TTFFont* font) {
     const uint8_t* head = data + font->head_offset;
     font->units_per_em = read_u16(head + 18);
     if (font->units_per_em == 0) {
-        DBG_PRINTLNS("validate_ttf: FAIL units_per_em == 0");
+        FATAL_PRINT("units_per_em == 0");
         return false;
     }
 
     int16_t index_to_loc_format = read_i16(head + 50);
     if (index_to_loc_format != 0 && index_to_loc_format != 1) {
-        DBG_PRINTLNS("validate_ttf: FAIL indexToLocFormat not 0 or 1");
+        FATAL_PRINT("indexToLocFormat not 0 or 1");
         return false;
     }
     font->loca_is_long = (index_to_loc_format == 1);
@@ -133,7 +139,7 @@ bool validate_ttf(const uint8_t* data, uint32_t size, TTFFont* font) {
     const uint8_t* maxp = data + font->maxp_offset;
     font->num_glyphs = read_u16(maxp + 4);
     if (font->num_glyphs == 0) {
-        DBG_PRINTLNS("validate_ttf: FAIL num_glyphs == 0");
+        FATAL_PRINT("num_glyphs == 0");
         return false;
     }
 
@@ -141,7 +147,7 @@ bool validate_ttf(const uint8_t* data, uint32_t size, TTFFont* font) {
         ? (uint32_t)(font->num_glyphs + 1) * 4
         : (uint32_t)(font->num_glyphs + 1) * 2;
     if (font->loca_length < expected_loca_len) {
-        DBG_PRINTLNS("validate_ttf: FAIL loca table shorter than num_glyphs+1 requires");
+        FATAL_PRINT("loca table shorter than num_glyphs+1 requires");
         return false;
     }
 
@@ -154,13 +160,13 @@ bool validate_ttf(const uint8_t* data, uint32_t size, TTFFont* font) {
     const uint8_t* cmap = data + font->cmap_offset;
     uint32_t cmap_table_size = size - font->cmap_offset;
     if (cmap_table_size < 4) {
-        DBG_PRINTLNS("validate_ttf: FAIL cmap table region too small");
+        FATAL_PRINT("cmap table region too small");
         return false;
     }
 
     uint16_t num_cmap_tables = read_u16(cmap + 2);
     if ((uint64_t)4 + (uint64_t)num_cmap_tables * 8 > cmap_table_size) {
-        DBG_PRINTLNS("validate_ttf: FAIL cmap encoding record array doesn't fit in file");
+        FATAL_PRINT("cmap encoding record array doesn't fit in file");
         return false;
     }
 
@@ -181,8 +187,7 @@ bool validate_ttf(const uint8_t* data, uint32_t size, TTFFont* font) {
         // it's usable, so we can see exactly what this font actually
         // ships (platform/encoding/format) when the "no supported
         // cmap subtable" rejection below fires.
-        DBG_PRINTS("validate_ttf: cmap subtable platform=");
-        DBG_PRINTLNS(platform_id == 0 ? "0(Unicode)" : platform_id == 1 ? "1(Mac)" : platform_id == 3 ? "3(Windows)" : "?(other)");
+        INF_PRINTF("cmap_subtable_platform=%s\n", platform_id == 0 ? "0(Unicode)" : platform_id == 1 ? "1(Mac)" : platform_id == 3 ? "3(Windows)" : "?(other)");
 
         if (format != 4 && format != 12) continue;
 
@@ -201,14 +206,14 @@ bool validate_ttf(const uint8_t* data, uint32_t size, TTFFont* font) {
     }
 
     if (best_score < 0) {
-        DBG_PRINTLNS("validate_ttf: FAIL no cmap subtable with format 4 or 12 found");
+        FATAL_PRINT("no cmap subtable with format 4 or 12 found");
         return false;
     }
 
     font->cmap_subtable_offset = best_offset;
     font->cmap_format = best_format;
 
-    DBG_PRINTLNS("validate_ttf: OK");
+    INF_PRINT("ttf ok");
 
     return true;
 }

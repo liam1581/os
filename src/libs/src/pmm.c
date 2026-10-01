@@ -1,6 +1,6 @@
 #include "mem/pmm.h"
 #include "multiboot2.h"
-#include "debug.h"
+#include "log.h"
 
 // Upper bound on how much physical RAM the PMM can track. This must not
 // exceed the amount of memory identity-mapped by the boot page tables --
@@ -61,7 +61,7 @@ void pmm_init(uint64_t multiboot_info_addr) {
 
     struct multiboot_tag_mmap* mmap = multiboot2_find_mmap(multiboot_info_addr);
     if (!mmap) {
-        DBG_PRINT(__FILE__, __FUNCTION__, __LINE__, "no multiboot2 mmap tag found");
+        DBG_PRINT("no multiboot2 mmap tag found");
         return;
     }
 
@@ -129,6 +129,43 @@ void pmm_free_frame(uint64_t phys_addr) {
     uint64_t frame = phys_addr / PMM_FRAME_SIZE;
     if (frame < search_hint) search_hint = frame;
     set_free(frame);
+}
+
+// Finds and reserves `count` physically consecutive free frames, so a
+// caller (grow_heap() in kheap.c) can get one large contiguous span
+// instead of gathering one frame at a time and hoping nothing reserved
+// (a multiboot module, the multiboot info struct, etc.) happens to sit
+// in the middle of the run. Same two-pass search as pmm_alloc_frame():
+// scan forward from search_hint, then wrap around from frame 0.
+uint64_t pmm_alloc_contiguous(uint64_t count) {
+    if (count == 0) return 0;
+    if (count == 1) return pmm_alloc_frame();
+
+    for (int pass = 0; pass < 2; pass++) {
+        uint64_t scan_start = (pass == 0) ? search_hint : 0;
+        uint64_t scan_end = (pass == 0) ? total_frames : search_hint;
+        if (scan_end > total_frames) scan_end = total_frames;
+
+        uint64_t run_start = scan_start;
+        uint64_t run_len = 0;
+
+        for (uint64_t f = scan_start; f < scan_end; f++) {
+            if (!is_used(f)) {
+                if (run_len == 0) run_start = f;
+                run_len++;
+
+                if (run_len == count) {
+                    for (uint64_t i = 0; i < count; i++) set_used(run_start + i);
+                    search_hint = run_start + count;
+                    return run_start * PMM_FRAME_SIZE;
+                }
+            } else {
+                run_len = 0;
+            }
+        }
+    }
+
+    return 0; // no contiguous run of that size available
 }
 
 uint64_t pmm_total_memory_bytes(void) {

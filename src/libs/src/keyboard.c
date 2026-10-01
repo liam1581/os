@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include "log.h"
 #include "bool.h"
 #include "x86_64/idt.h"
 #include "drivers/keyboard/ps2.h"

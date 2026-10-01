@@ -6,7 +6,7 @@ extern "C" {
     #include "string.h"
     #include "print.h"
 
-    #include "krnl.h"
+    #include "log.h"
 }
 
 static bool command_string_equals(const char* a, const char* b) {
@@ -209,7 +209,7 @@ ArgumentValue ArgumentObject::getArgument(const char* argumentName) const {
 
 void Commands::add(const char* commandName, int argCount) {
     if (commandCount >= MAX_COMMANDS || argCount < 0 || argCount > MAX_ARGUMENTS) {
-        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "TOO MANY COMMANDS/ARGUMENTS REGISERED", 1);
+        KERNEL_PANIC("TOO MANY COMMANDS/ARGUMENTS REGISERED", 1);
         return;
     }
 
@@ -274,19 +274,13 @@ void Commands::handleCommand(char keyboard_buffer[]) {
             ArgumentObject arguments(args, &commands[i]);
             int returnCode = commands[i].func(arguments);
             if (returnCode != 0) {
-                print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-                print("ERROR: Command ");
-                print(commands[i].name);
-                print(" returned error code ");
-                print_uint64_dec((uint64_t)returnCode);
-                println("!");
-                print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+                printf("%C4,1ERROR: Command %s returned error code %d!\n%C15,1", commands[i].name, returnCode);
             }
 
         } else {
             clear_screen();
             println(commands[i].name);
-            KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "COMMAND HAS NO FUNCTION DEFINED", 0);
+            KERNEL_PANIC("COMMAND HAS NO FUNCTION DEFINED", 0);
         }
 
         return;
@@ -393,6 +387,7 @@ void Commands::registerCommands() {
     add("ver", 0);
     executes("ver", cmd_ver);
 
+    helpMessage("help", " - Displays this message!");
     helpMessage("echo", " \"message\" - Prints a message!");
     helpMessage("cls", " - Clears the screen");
     helpMessage("reboot", " - Restart the Computer");

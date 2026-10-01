@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <bool.h>
 
 #include "structs_and_enums/all.h"
 
@@ -33,3 +34,6 @@ void fbmove_cursor_down();
 void fbmove_cursor_left();
 void fbmove_cursor_right();
 void fbmove_cursor_to_start();
+
+void fbcursor_tick(void);
+void fbcursor_poll(void);

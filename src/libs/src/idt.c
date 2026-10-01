@@ -4,14 +4,14 @@
 #include "x86_64/idt.h"
 #include "x86_64/pic.h"
 
-#define IDT_IRQ0_TIMER    0x20
-#define IDT_IRQ1_KEYBOARD 0x21
+#define IDT_IRQ0_TIMER    	0x20
+#define IDT_IRQ1_KEYBOARD 	0x21
 
-#define IDT_GATE_PRESENT (1 << 7)
-#define IDT_GATE_DPL0 (0b00 << 5)
-#define IDT_GATE_DPL1 (0b01 << 5)
-#define IDT_GATE_DPL2 (0b10 << 5)
-#define IDT_GATE_DPL3 (0b11 << 5)
+#define IDT_GATE_PRESENT 	(1 << 7)
+#define IDT_GATE_DPL0 		(0b00 << 5)
+#define IDT_GATE_DPL1 		(0b01 << 5)
+#define IDT_GATE_DPL2 		(0b10 << 5)
+#define IDT_GATE_DPL3 		(0b11 << 5)
 #define IDT_GATE_TYPE_INTERRUPT 0xE
 
 #define IDT_ENTRY_TYPE_INTERRUPT (IDT_GATE_PRESENT | IDT_GATE_DPL0 | IDT_GATE_TYPE_INTERRUPT)
@@ -54,6 +54,12 @@ void idt_set_entry(uint8_t vector, uint64_t isr_addr, uint16_t selector, uint8_t
 extern void idt_handler_keyboard_wrapped();
 extern void idt_handler_timer_wrapped();
 
+extern void idt_handler_exc0_wrapped();
+extern void idt_handler_exc6_wrapped();
+extern void idt_handler_exc8_wrapped();
+extern void idt_handler_exc13_wrapped();
+extern void idt_handler_exc14_wrapped();
+
 void idt_handler_keyboard() {
 	if (idt_handler_keyboard_user != NULL) {
 		idt_handler_keyboard_user();
@@ -78,6 +84,12 @@ void idt_init() {
 	
 	idt_set_entry(IDT_IRQ0_TIMER, (uint64_t) idt_handler_timer_wrapped, GDT_SELECTOR_CS_KERNEL, IDT_ENTRY_TYPE_INTERRUPT);
 	idt_set_entry(IDT_IRQ1_KEYBOARD, (uint64_t) idt_handler_keyboard_wrapped, GDT_SELECTOR_CS_KERNEL, IDT_ENTRY_TYPE_INTERRUPT);
+
+	idt_set_entry(0,  (uint64_t) idt_handler_exc0_wrapped,  GDT_SELECTOR_CS_KERNEL, IDT_ENTRY_TYPE_INTERRUPT);
+	idt_set_entry(6,  (uint64_t) idt_handler_exc6_wrapped,  GDT_SELECTOR_CS_KERNEL, IDT_ENTRY_TYPE_INTERRUPT);
+	idt_set_entry(8,  (uint64_t) idt_handler_exc8_wrapped,  GDT_SELECTOR_CS_KERNEL, IDT_ENTRY_TYPE_INTERRUPT);
+	idt_set_entry(13, (uint64_t) idt_handler_exc13_wrapped, GDT_SELECTOR_CS_KERNEL, IDT_ENTRY_TYPE_INTERRUPT);
+	idt_set_entry(14, (uint64_t) idt_handler_exc14_wrapped, GDT_SELECTOR_CS_KERNEL, IDT_ENTRY_TYPE_INTERRUPT);
 	
 	idt_load(&idt_ptr);
 	

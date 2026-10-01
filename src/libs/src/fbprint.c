@@ -2,7 +2,7 @@
 #include "multiboot2.h"
 
 #include "bool.h"
-#include "krnl.h"
+#include "log.h"
 
 #include "mem/mem.h"
 #include "drivers/files/os/ttf.h"
@@ -90,6 +90,31 @@ static uint32_t cursor_y = 0;
 
 static uint32_t cursor_col = 0;
 static uint32_t cursor_row = 0;
+
+
+/*
+ * Blinking line cursor.
+ *
+ * cursor_tick_counter is advanced from the PIT timer IRQ (see
+ * fbcursor_tick()) and is therefore just a plain integer increment --
+ * no font/pixel work happens in interrupt context (see the
+ * reentrancy note on glyph_advance_width() above; draw_glyph() shares
+ * that same constraint via its rasterizer statics). The actual
+ * blink toggle/redraw happens in fbcursor_poll(), which must only
+ * ever be called from normal (non-interrupt) context -- currently the
+ * kernel's idle loop in main.cpp.
+ */
+#define CURSOR_BLINK_TICKS 5 // PIT ticks between toggles (10 Hz PIT -> ~500ms blink)
+
+static volatile uint32_t cursor_tick_counter = 0;
+static uint32_t cursor_last_toggle_tick = 0;
+static bool cursor_bar_drawn = false; // is the solid blink bar currently painted on screen
+
+// Forward declarations: fbprintc()/fbdelete_last_char() (defined
+// further up in this file, before the CURSOR section) call these.
+static void cursor_paint(bool on);
+static void cursor_reset_blink(void);
+static void cursor_show_after_move(void);
 
 
 /*
@@ -261,15 +286,16 @@ int fbprint_init(uint64_t multiboot_info_addr)
     // ttf_get_glyph_outline) dereferences through it -- unlike the old
     // LFH bitmap font, which copied its (much smaller) glyph data into
     // a static array and could free its source buffer immediately.
+
     uint8_t* fontBuffer = (uint8_t*)kmalloc(fontFileSize);
     uint32_t bytesRead;
 
     if (!iso9660_read_file(fontPath, fontBuffer, &bytesRead)) {
-        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "FAILED TO READ TTF FILE", 1);
+        KERNEL_PANIC("FAILED TO READ TTF FILE", 1);
     }
 
     if (!validate_ttf(fontBuffer, fontFileSize, &font)) {
-        KERNEL_PANIC(__FILE_NAME__, __FUNCTION__, __LINE__, "INVALID TTF FILE", 1);
+        KERNEL_PANIC("INVALID TTF FILE", 1);
     }
 
     font_loaded = true;
@@ -412,6 +438,9 @@ void fbclear(void)
 
     cursor_col = 0;
     cursor_row = 0;
+
+    cursor_bar_drawn = false;
+    cursor_last_toggle_tick = cursor_tick_counter;
 }
 
 
@@ -671,6 +700,8 @@ void fbprintc(char character)
     if (character == '\0')
         return;
 
+    cursor_reset_blink();
+
 
     /*
      * Newline.
@@ -691,6 +722,7 @@ void fbprintc(char character)
         }
 
         fb_newline();
+        cursor_show_after_move();
         return;
     }
 
@@ -703,15 +735,20 @@ void fbprintc(char character)
         cursor_col = 0;
         cursor_x = 0;
 
+        cursor_show_after_move();
         return;
     }
 
 
     /*
-     * Backspace.
+     * Backspace. fbdelete_last_char() does its own
+     * reset/show pair, so undo the one just done above
+     * for it (nothing was painted yet, so this is just
+     * bookkeeping) and let it handle the redraw.
      */
     if (character == '\b') {
 
+        cursor_bar_drawn = false;
         fbdelete_last_char();
         return;
     }
@@ -758,6 +795,8 @@ void fbprintc(char character)
 
     cursor_col++;
     cursor_x += advance;
+
+    cursor_show_after_move();
 }
 
 
@@ -919,6 +958,8 @@ void fbdelete_last_char(void)
         return;
     }
 
+    cursor_reset_blink();
+
 
     /*
      * Move to previous character.
@@ -932,8 +973,10 @@ void fbdelete_last_char(void)
         /*
          * Move to previous line.
          */
-        if (cursor_row == 0)
+        if (cursor_row == 0) {
+            cursor_show_after_move();
             return;
+        }
 
         cursor_row--;
 
@@ -1002,6 +1045,8 @@ void fbdelete_last_char(void)
         text_buffer[cursor_row][cursor_col] =
             ' ';
     }
+
+    cursor_show_after_move();
 }
 
 
@@ -1010,6 +1055,113 @@ void fbdelete_last_char(void)
  * CURSOR
  * ============================================================
  */
+
+/*
+ * Paints or erases the blinking cursor bar at the *current*
+ * cursor_row/col/x/y. Erasing is done by simply redrawing whatever
+ * glyph is logically at that cell (draw_glyph() always clears its
+ * full cell to the background first), rather than trying to restore
+ * saved pixels -- this keeps it correct even if the character
+ * underneath has since changed.
+ *
+ * Never call this from interrupt context (see draw_glyph()/
+ * glyph_advance_width()'s reentrancy notes).
+ */
+static void cursor_paint(bool on)
+{
+    if (!font_loaded)
+        return;
+
+    if (cursor_row >= FB_MAX_ROWS ||
+        cursor_col >= FB_MAX_COLS) {
+
+        cursor_bar_drawn = false;
+        return;
+    }
+
+    char c = text_buffer[cursor_row][cursor_col];
+
+    // Always redraw the glyph first: this is what "erases" the bar
+    // when turning it off, and gives the bar a clean cell to paint
+    // over when turning it on.
+    uint32_t advance = draw_glyph((uint8_t)c, cursor_x, cursor_y);
+
+    if (on) {
+        struct RGBColor fg =
+            color_palette[foreground_color];
+
+        uint32_t line_height = 2;
+
+        if (line_height > CHAR_HEIGHT)
+            line_height = CHAR_HEIGHT;
+
+        uint32_t y0 =
+            cursor_y + CHAR_HEIGHT - line_height;
+
+        for (uint32_t y = y0;
+             y < y0 + line_height &&
+             y < framebuffer.height;
+             y++) {
+
+            for (uint32_t x = cursor_x;
+                 x < cursor_x + advance &&
+                 x < framebuffer.width;
+                 x++) {
+
+                fb_put_pixel(
+                    x,
+                    y,
+                    fg.r,
+                    fg.g,
+                    fg.b
+                );
+            }
+        }
+    }
+
+    cursor_bar_drawn = on;
+}
+
+// Called from the PIT timer IRQ. Deliberately does no drawing -- see
+// the reentrancy note above cursor_tick_counter's declaration.
+void fbcursor_tick(void)
+{
+    cursor_tick_counter++;
+}
+
+// Called periodically from normal (non-interrupt) context, e.g. the
+// kernel's idle loop, to actually toggle and redraw the blink.
+void fbcursor_poll(void)
+{
+    uint32_t now = cursor_tick_counter;
+
+    if (now - cursor_last_toggle_tick <
+        CURSOR_BLINK_TICKS) {
+
+        return;
+    }
+
+    cursor_last_toggle_tick = now;
+    cursor_paint(!cursor_bar_drawn);
+}
+
+// Erases the bar (if currently drawn) at the cursor's position
+// *before* that position changes, and resets the blink timer so the
+// cursor comes back solid right away rather than mid-blink. Callers
+// must call cursor_show_after_move() again once they're done updating
+// cursor_row/col/x/y.
+static void cursor_reset_blink(void)
+{
+    if (cursor_bar_drawn)
+        cursor_paint(false);
+}
+
+static void cursor_show_after_move(void)
+{
+    cursor_last_toggle_tick = cursor_tick_counter;
+    cursor_paint(true);
+}
+
 
 void fbmove_cursor(int row, int col)
 {
@@ -1047,6 +1199,8 @@ void fbmove_cursor(int row, int col)
         col = (int)max_cols - 1;
 
 
+    cursor_reset_blink();
+
     cursor_row = (uint32_t)row;
     cursor_col = (uint32_t)col;
 
@@ -1055,6 +1209,8 @@ void fbmove_cursor(int row, int col)
 
     cursor_y =
         cursor_row * CHAR_HEIGHT;
+
+    cursor_show_after_move();
 }
 
 
@@ -1063,10 +1219,14 @@ void fbmove_cursor_up(void)
     if (cursor_row == 0)
         return;
 
+    cursor_reset_blink();
+
     cursor_row--;
 
     cursor_y =
         cursor_row * CHAR_HEIGHT;
+
+    cursor_show_after_move();
 }
 
 
@@ -1081,15 +1241,21 @@ void fbmove_cursor_down(void)
     if (cursor_row + 1 >= max_rows)
         return;
 
+    cursor_reset_blink();
+
     cursor_row++;
 
     cursor_y =
         cursor_row * CHAR_HEIGHT;
+
+    cursor_show_after_move();
 }
 
 
 void fbmove_cursor_left(void)
 {
+    cursor_reset_blink();
+
     if (cursor_col > 0) {
 
         cursor_col--;
@@ -1120,6 +1286,8 @@ void fbmove_cursor_left(void)
 
     cursor_y =
         cursor_row * CHAR_HEIGHT;
+
+    cursor_show_after_move();
 }
 
 
@@ -1140,6 +1308,7 @@ void fbmove_cursor_right(void)
         return;
     }
 
+    cursor_reset_blink();
 
     /*
      * Don't move beyond the logical line.
@@ -1183,11 +1352,15 @@ void fbmove_cursor_right(void)
 
 void fbmove_cursor_to_start(void)
 {
+    cursor_reset_blink();
+
     cursor_row = 0;
     cursor_col = 0;
 
     cursor_x = 0;
     cursor_y = 0;
+
+    cursor_show_after_move();
 }
 
 
