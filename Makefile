@@ -27,16 +27,16 @@ VERSION := $(DD)$(MM)$(YYYY).$(HH)$(MIN)-$(MJ).$(MN)-$(BN)
 VARIANTS := testing production kernelpanic
 
 # -DKEYBOARD_ VARIANTS: GERMAN // EN_US
-DEFINES_testing     := -DKEYBOARD_GERMAN -DDEBUG_QEMU -DTESTING
-DEFINES_production  := -DKEYBOARD_GERMAN -DDEBUG_QEMU -DPRODUCTION
-DEFINES_kernelpanic := -DKEYBOARD_GERMAN -DDEBUG_QEMU -DKERNELPANIC
+DEFINES_testing     := -DKEYBOARD_GERMAN -DDEBUG_QEMU -DTESTING #-DDEBUG_INTERRUPTS #-DDEBUG_INT20
+DEFINES_production  := -DKEYBOARD_GERMAN -DDEBUG_QEMU -DPRODUCTION #-DDEBUG_INTERRUPTS #-DDEBUG_INT20
+DEFINES_kernelpanic := -DKEYBOARD_GERMAN -DDEBUG_QEMU -DKERNELPANIC #-DDEBUG_INTERRUPTS #-DDEBUG_INT20
 
 # Which variant's kernel.bin gets packaged into the ISO / used by `make run`
 ISO_VARIANT := testing
 
 # DEFINES used for building the userspace programs (.lhe files). These are
 # not kernel-variant specific, so a single fixed set is used.
-DEFINES := -DKEYBOARD_GERMAN -DDEBUG_QEMU -DPRODUCTION
+DEFINES := -DKEYBOARD_GERMAN -DDEBUG_QEMU -DPRODUCTION #-DDEBUG_INTERRUPTS #-DDEBUG_INT20
 
 kernel_c_source_files := $(shell find src/kernel -name *.c)
 kernel_cpp_source_files := $(shell find src/kernel -name *.cpp)
@@ -71,12 +71,10 @@ program_leh_files := $(cd_program_c_leh_files) $(fat_program_c_leh_files) $(cd_p
 
 INCLUDES := -I src/libs/include -I src/libs/include/kapi -I src/kernel/include -I src/csh/include -I src/cosl/include -I src/kernel/TESTING/include
 
-KERNEL_SAFETY_FLAGS := -mno-red-zone -mno-mmx -mno-sse -mno-sse2
+CFLAGS := -Werror -mno-red-zone -mmmx -msse -msse2
+CXXFLAGS := -Werror -std=c++26 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics -mno-red-zone -mmmx -msse -msse2
 
-CFLAGS := $(KERNEL_SAFETY_FLAGS)
-CXXFLAGS := -std=c++26 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics $(KERNEL_SAFETY_FLAGS)
-
-CXXFLAGS_SSE_OK := -std=c++26 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mgeneral-regs-only
+CXXFLAGS_SSE_OK := -Werror -std=c++26 -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics -mno-red-zone -mmmx -msse -msse2
 
 # ----------------------------------------------------------------------------
 #  Per-variant object file lists (build/<variant>/...)
@@ -302,17 +300,17 @@ clean:
 
 clean_all:
 	@printf "$(YELLOW)$(BOLD)[clean_all]$(RESET) removing ALL build artifacts...\n"
-	@rm -rf targets/x86_64/disk.img
-	@rm -rf build dist
-	@rm -rf targets/x86_64/disk/programs/*.leh targets/x86_64/iso/programs/*.leh targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
+	@sudo rm -rf targets/x86_64/disk.img
+	@sudo rm -rf build dist
+	@sudo rm -rf targets/x86_64/disk/programs/*.leh targets/x86_64/iso/programs/*.leh targets/x86_64/iso/boot/kernel.bin targets/x86_64/iso/boot/kernel_*.bin
 	@printf "$(GREEN)Clean complete$(RESET)\n"
 
 build_clean:
-	@$(MAKE) --no-print-directory clean
-	@$(MAKE) --no-print-directory build
+	@$(MAKE) -j$(nproc) --no-print-directory clean
+	@$(MAKE) -j$(nproc) --no-print-directory build
 
 run:
-	@docker exec -it myos_cpp make --no-print-directory build_clean
+	@docker exec -it myos_cpp make -j$(nproc) --no-print-directory build_clean
 	@if [ ! -f targets/x86_64/disk.img ]; then \
 		printf "$(BLUE)$(BOLD)[disk]$(RESET) creating virtual disk...\n"; \
 		dd if=/dev/zero of=targets/x86_64/disk.img bs=1M count=$(FAT_DISK_SIZE) status=none; \
@@ -330,6 +328,7 @@ run:
 		-drive file=targets/x86_64/disk.img,format=raw,if=ide,index=0,media=disk \
 		-drive file=dist/x86_64/kernel_$(VERSION).iso,format=raw,if=ide,index=2,media=cdrom \
 		-m 16G \
+		-smp 6,sockets=1,cores=6,threads=1 \
 		-boot d \
 		-vga std \
 		-d int,cpu_reset -D qemu-crash.log \

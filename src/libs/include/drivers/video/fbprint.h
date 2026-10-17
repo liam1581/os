@@ -37,3 +37,6 @@ void fbmove_cursor_to_start();
 
 void fbcursor_tick(void);
 void fbcursor_poll(void);
+
+uint64_t fb_lock_acquire(void);
+void fb_lock_release(uint64_t flags);

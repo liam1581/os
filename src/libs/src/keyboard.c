@@ -2,7 +2,7 @@
 #include "log.h"
 #include "bool.h"
 #include "x86_64/idt.h"
-#include "drivers/keyboard/ps2.h"
+#include "x86_64/ps2.h"
 #include "drivers/keyboard/keyboard.h"
 
 #define KEYBOARD_EXTENDED_SCAN_CODE 0xE0
@@ -24,7 +24,10 @@ void keyboard_handler() {
 	static bool is_extended = 0;
 	
 	uint8_t scan_code = ps2_read_scan_code();
-	
+#if defined(DEBUG_INTERRUPTS)
+    INF_PRINTF("[INT] vector=0x21 (keyboard) scan_code=0x%x\n", (uint64_t) scan_code);
+#endif
+
 	if (scan_code == KEYBOARD_EXTENDED_SCAN_CODE) {
 		is_extended = true;
 		return;
@@ -57,6 +60,8 @@ void keyboard_handler() {
 }
 
 void keyboard_init() {
+    ps2_flush_output_buffer();
+    
 	idt_init();
 	idt_set_handler_keyboard(keyboard_handler);
 }

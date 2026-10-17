@@ -11,3 +11,7 @@ currently supported things are:
     exit(number);   [anything over 1 is an error]
     
     // comments
+    /* Multi
+     * Line
+     * Comments
+     */

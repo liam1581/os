@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-void cpp_main(void);
+void kernel_main(void);
 
 #if defined(__cplusplus)
 }

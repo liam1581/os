@@ -1,3 +1,44 @@
+01102026.2244-3.9-483 -- 17102026.2252-4.0-603:
+    - Added bigger command history
+    - Added more syscalls
+    - Added program Arguments for leh (int argc, char* argv[])
+    - Added color to qemu debug output corrosponding to the PRINT_COLOR enum [DBG/INF/ERR/FATAL _PRINTF("%C<foreground><background>...")]
+    - Added preprocessor defines that can be enabled in the Makefile to log generall interrupts and keyboard interrupts
+        - Disabled by default because elsewise the debug output would be cluttered
+    - Added full FPU/MMX/SSE/SSE2 support (FINALLY, FLOATING POINT NUMBERS, YIPPIEEEE)
+    - Added float arguments for commands
+    - Added rmdir/rd commands (deleting directory)
+    - Added mouse support (for now, only in testing mode)
+    - Added drawing functions (line thickness and color can be changed)
+        - Triangle drawing is supported {also supports filled in triangles}
+        - Cube drawing is supported {also supports filled in cubes}
+        - Circle drawing is supported {also supports filled in cubes}
+        - Line drawing is supported
+    - Added Point checkind (checking if a point is inside a shape so Cube || Triangle)
+    - Added Multi Core and Multi Threading support
+        - Added "threads" and "thread.test" commands for:
+            - Printing out thread count
+            - Executing an example function on every thread
+    
+    - In testing mode it currently draws a clickable circle that for now just prints a message
+
+    - Moved fat32 disk initialization to entrypoint
+
+    - Changed leh files (code):
+        - Now have to be int type function and when return != 0: Error message
+    - Changed logging to now output "[HH:MM:SS] [TYPE] FILE::FUNCTION:LINE: msg"
+        - Example: "[20:22:15] [INFO] multiboot2.c::multiboot2_find_framebuffer_rgb:94: FRAMEBUFFER IS RGB"
+    - Changed kernel_main to entrypoint
+    - Changed cpp_main to kernel_main
+    - Changed Makefile to use -j$(nproc) [compile time is so much shorter now god dayum]
+
+    - Fixed syscalls [both types, int 0x80 and syscall]
+    - Fixed color bug: printf with %C4,1 where should be %C4,0
+    - Fixed cursor bug
+    - Fixed Keyboard bug
+
+    - [Updated PLANNED file]
+
 24092026.1913-3.8-398 -- 01102026.2024-3.9-482:
     - Went back to Makefile
     - Added better logging

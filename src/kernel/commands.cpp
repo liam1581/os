@@ -2,6 +2,7 @@
 
 #include "command_functions.hpp"
 
+
 extern "C" {
     #include "string.h"
     #include "print.h"
@@ -90,6 +91,74 @@ static int parse_int(const char* text) {
     return negative ? -result : result;
 }
 
+static double parse_double(const char* text) {
+    if (text == nullptr)
+        return 0.0;
+
+    size_t i = 0;
+
+    bool negative = false;
+
+    if (text[i] == '-') {
+        negative = true;
+        i++;
+    } else if (text[i] == '+') {
+        i++;
+    }
+
+    double result = 0.0;
+
+    while (text[i] >= '0' && text[i] <= '9') {
+        result = result * 10.0 + (double)(text[i] - '0');
+        i++;
+    }
+
+    if (text[i] == '.') {
+        i++;
+
+        double divisor = 10.0;
+
+        while (text[i] >= '0' && text[i] <= '9') {
+            result += (double)(text[i] - '0') / divisor;
+            divisor *= 10.0;
+            i++;
+        }
+    }
+
+    if (text[i] == 'e' || text[i] == 'E') {
+        i++;
+
+        bool exponentNegative = false;
+
+        if (text[i] == '-') {
+            exponentNegative = true;
+            i++;
+        } else if (text[i] == '+') {
+            i++;
+        }
+
+        int exponent = 0;
+
+        while (text[i] >= '0' && text[i] <= '9') {
+            exponent = exponent * 10 + (text[i] - '0');
+            i++;
+        }
+
+        double multiplier = 1.0;
+
+        for (int j = 0; j < exponent; j++) {
+            if (exponentNegative)
+                multiplier *= 0.1;
+            else
+                multiplier *= 10.0;
+        }
+
+        result *= multiplier;
+    }
+
+    return negative ? -result : result;
+}
+
 static bool text_equals(const char* a, const char* b) {
     size_t i = 0;
     while (a[i] != '\0' && b[i] != '\0') {
@@ -117,6 +186,14 @@ ArgumentValue::operator bool() const {
            text_equals(value, "1");
 }
 
+ArgumentValue::operator double() const {
+    return parse_double(value);
+}
+
+ArgumentValue::operator float() const {
+    return (float)parse_double(value);
+}
+
 ArgumentValue::operator const char*() const {
     return value;
 }
@@ -128,6 +205,10 @@ ArgumentObject::ArgumentObject(
 
 const char* ArgumentObject::raw() const {
     return rawArguments;
+}
+
+int ArgumentObject::getTokenCount() const {
+    return command_line_argument_count(rawArguments);
 }
 
 bool ArgumentObject::getToken(int index, char* output, size_t outputSize) const {
@@ -207,7 +288,7 @@ ArgumentValue ArgumentObject::getArgument(const char* argumentName) const {
     return {ArgumentType::ARG_STRING, nullptr, 0};
 }
 
-void Commands::add(const char* commandName, int argCount) {
+void Commands::add(const char* commandName, int argCount, bool variadic) {
     if (commandCount >= MAX_COMMANDS || argCount < 0 || argCount > MAX_ARGUMENTS) {
         KERNEL_PANIC("TOO MANY COMMANDS/ARGUMENTS REGISERED", 1);
         return;
@@ -217,6 +298,7 @@ void Commands::add(const char* commandName, int argCount) {
         commandName,
         argCount
     };
+    commands[commandCount].variadic = variadic;
 
     commandCount++;
 }
@@ -248,25 +330,17 @@ void Commands::handleCommand(char keyboard_buffer[]) {
         }
         int suppliedArguments = command_line_argument_count(args);
 
-        if (suppliedArguments != commands[i].argCount) {
-            print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-            print("Invalid argument count for ");
-            print(commands[i].name);
-            print(": expected ");
-            print_uint64_dec((uint64_t)commands[i].argCount);
-            print(", got ");
-            print_uint64_dec((uint64_t)suppliedArguments);
-            printc('\n');
-            print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        bool argCountOk = commands[i].variadic
+            ? (suppliedArguments >= commands[i].argCount)
+            : (suppliedArguments == commands[i].argCount);
+
+        if (!argCountOk) {
+            printf("%C4,0Invalid argument count for %s: extected %s %d, got %d\n", commands[i].name, commands[i].variadic ? "at least" : "", commands[i].argCount, suppliedArguments);
             return;
         }
 
         if (commands[i].argumentCount != commands[i].argCount) {
-            print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-            print("Command ");
-            print(commands[i].name);
-            println(" has not registered all of its arguments.");
-            print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+            printf("%C4,0Command %s has not registered all of its arguments!\n", commands[i].name);
             return;
         }
 
@@ -274,7 +348,7 @@ void Commands::handleCommand(char keyboard_buffer[]) {
             ArgumentObject arguments(args, &commands[i]);
             int returnCode = commands[i].func(arguments);
             if (returnCode != 0) {
-                printf("%C4,1ERROR: Command %s returned error code %d!\n%C15,1", commands[i].name, returnCode);
+                printf("%C4,0ERROR: Command %s returned error code %d!\n", commands[i].name, returnCode);
             }
 
         } else {
@@ -287,10 +361,7 @@ void Commands::handleCommand(char keyboard_buffer[]) {
     }
 
     if (keyboard_buffer[0] != '\0') {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        print("Unknown command: ");
-        println(keyboard_buffer);
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        printf("%C4,0Unknown command: %s\n", keyboard_buffer);
     }
 }
 
@@ -334,7 +405,7 @@ void Commands::registerCommands() {
     argument<const char*>("cd", "directory");
     executes("cd", cmd_cd);
 
-    add("run", 1);
+    add("run", 1, true); // variadic: extra tokens become the program's argv
     argument<const char*>("run", "file");
     executes("run", cmd_run);
     
@@ -363,6 +434,14 @@ void Commands::registerCommands() {
     argument<const char*>("rm", "file");
     executes("rm", cmd_rm);
 
+    add("rmdir", 1);
+    argument<const char*>("rmdir", "directory");
+    executes("rmdir", cmd_rmdir);
+
+    add("rd", 1);
+    argument<const char*>("rd", "directory");
+    executes("rd", cmd_rmdir);
+
     add("del", 1);
     argument<const char*>("del", "file");
     executes("del", cmd_rm);
@@ -387,7 +466,12 @@ void Commands::registerCommands() {
     add("ver", 0);
     executes("ver", cmd_ver);
 
-    helpMessage("help", " - Displays this message!");
+    add("threads", 0);
+    executes("threads", cmd_threads);
+
+    add("thread.test", 0);
+    executes("thread.test", cmd_thread_test);
+
     helpMessage("echo", " \"message\" - Prints a message!");
     helpMessage("cls", " - Clears the screen");
     helpMessage("reboot", " - Restart the Computer");
@@ -398,7 +482,7 @@ void Commands::registerCommands() {
     helpMessage("fat.init", " - Initializes the FAT32 driver");
     helpMessage("ls", " - Does a directory listing");
     helpMessage("cat", " \"file\" - Prints out the file's content");
-    helpMessage("run", " \"file\" - Runs a LEH file");
+    helpMessage("run", " \"file\" [args...] - Runs a LEH file, passing any extra arguments to its main(argc, argv, api)");
     helpMessage("cd", " \"directory\" - Changes directorys");
     helpMessage("cre.file", " \"file\" - Creates a file (C: drive only)");
     helpMessage("cre.dir", " \"directory\" - Creates a directory (C: drive only)");
@@ -410,7 +494,9 @@ void Commands::registerCommands() {
     helpMessage("overwrite", R"( "file" "text" - Replaces all file contents (C: drive only))");
     helpMessage("display_mem", " - displays memory usage");
     helpMessage("ver", " - Displays the kernel version");
-    helpMessage("TESTING", " - Causes kernel panic because no function is defined");
+    helpMessage("threads", " - Lists logical CPUs and whether each is idle or busy");
+    helpMessage("thread.test", " - Runs a hello-world task on every idle CPU");
+    helpMessage("TRIGGER_KERNEL_PANIC", " - Causes kernel panic because no function is defined");
 
-    add("TESTING", 0);
+    add("TRIGGER_KERNEL_PANIC", 0);
 }

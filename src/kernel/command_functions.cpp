@@ -4,6 +4,8 @@ extern "C" {
     #include "print.h"
     #include "string.h"
     #include "log.h"
+    #include "smp.h"
+    #include "threading.h"
     
     #include "drivers/storage/atapi.h"
     #include "drivers/storage/ata.h"
@@ -58,9 +60,7 @@ int cmd_echo(ArgumentObject args) {
     const char* message = args.getArgument("message");
 
     if (!args.getArgument("message").isValid()) {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        println("echo: missing message");
-        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        printf("%C4,0echo: missing message\n");
         return 1;
     }
 
@@ -99,10 +99,7 @@ int cmd_help(ArgumentObject args) {
         println("  Ctrl + Alt + R - Restart the computer");
         println("  Ctrl + Alt + S - Shut down the VM (NO ACPI)");
     } else {
-        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
-        print("help: unknown option \"");
-        print(type);
-        println("\"");
+        printf("%C4,0help: unknown option \"%s\"\n", type);
         return 1;
     }
 
@@ -120,7 +117,7 @@ int cmd_restart(ArgumentObject) {
     clear_screen();
     move_cursor_to_start();
     println("Restarting...");
-    delay_s(2);
+    delay_s(1);
     arch_restart();
 
     return 0;
@@ -339,6 +336,9 @@ int cmd_cat(ArgumentObject args) {
     return 0;
 }
 
+#define RUN_MAX_PROGRAM_ARGS 32
+#define RUN_MAX_PROGRAM_ARG_LENGTH 256
+
 int cmd_run(ArgumentObject args) {
     ArgumentValue fileArg = args.getArgument("file");
     if (!fileArg.isValid()) {
@@ -363,7 +363,25 @@ int cmd_run(ArgumentObject args) {
     char path[2048];
     strcat_s(path, useFat ? FATcurrent_dir : current_dir, relative_filename);
 
-    int exec = leh_exec_from(path, useFat);
+    // Token 0 is the declared "file" argument above; everything after
+    // that becomes the program's own argv. Static, not stack-allocated:
+    // this is sized generously (32 args, 256 chars each = 8KB) and the
+    // boot stack is small.
+    static char programArgBuffers[RUN_MAX_PROGRAM_ARGS][RUN_MAX_PROGRAM_ARG_LENGTH];
+    static char* programArgv[RUN_MAX_PROGRAM_ARGS];
+
+    int totalTokens = args.getTokenCount();
+    int argc = 0;
+
+    for (int i = 1; i < totalTokens && argc < RUN_MAX_PROGRAM_ARGS; i++) {
+        if (!args.getToken(i, programArgBuffers[argc], RUN_MAX_PROGRAM_ARG_LENGTH)) {
+            break;
+        }
+        programArgv[argc] = programArgBuffers[argc];
+        argc++;
+    }
+
+    int exec = leh_exec_from_args(path, useFat, argc, programArgv);
 
     if (exec != 1) {
         print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
@@ -379,7 +397,10 @@ int cmd_run(ArgumentObject args) {
     } else if (exec == -3) {
         println("     Invalid header!");
         return 1;
-    } else if (exec <= -4) {
+    } else if (exec == -4) {
+        println("     Program exited with Error code");
+        return 1;
+    } else if (exec <= -5) {
         println("     Unknown Error!");
         return 1;
     }
@@ -722,6 +743,56 @@ int cmd_rm(ArgumentObject args) {
     return 0;
 }
 
+int cmd_rmdir(ArgumentObject args) {
+    if (currentDrive != 'C') {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("rmdir: only supported on the FAT drive (C:). Switch with cd \"C:/\".");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    if (!fatInitialized) {
+        print_not_initialized("rmdir", 'C');
+        return 1;
+    }
+
+    ArgumentValue dirArg = args.getArgument("directory");
+    if (!dirArg.isValid()) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("rmdir: missing directory argument");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    const char* relative_dirname = dirArg;
+
+    char path[2048];
+    strcat_s(path, FATcurrent_dir, relative_dirname);
+
+    // fat32_delete_dir refuses files internally; check ourselves first
+    // for a clearer error message (mirrors rm's directory check above).
+    static struct FAT32Dir dir;
+    if (!fat32_list_dir(path, &dir)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("rmdir: directory not found");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+    if (dir.count > 0) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("rmdir: directory not empty");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    if (!fat32_delete_dir(path)) {
+        print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
+        println("rmdir: failed to delete directory (is it the current directory's root?)");
+        print_set_color(PRINT_COLOR_WHITE, PRINT_COLOR_BLACK);
+        return 1;
+    }
+
+    return 0;
+}
+
 static bool get_fat_file_path(const char* command, ArgumentObject args, char* path) {
     if (currentDrive != 'C') {
         print_set_color(PRINT_COLOR_RED, PRINT_COLOR_BLACK);
@@ -898,10 +969,51 @@ int cmd_ver(ArgumentObject) {
     return 0;
 }
 
+int cmd_threads(ArgumentObject) {
+    int total = thread_total_count();
+
+    printf("CPUs online: %i of %i detected\n", total, smp_cpu_detected_count());
+
+    for (int i = 0; i < smp_cpu_detected_count(); i++) {
+        printf("    cpu %i (apic id %i): ", i, smp_cpu_apic_id(i));
+        if (i == 0)                     println("main (running the shell)");
+        else if (!smp_cpu_is_online(i)) println("failed to start");
+        else if (smp_cpu_is_idle(i))    println("idle");
+        else                            println("busy");
+    }
+
+    return 0;
+}
+
+void thread_test_task(void* arg) {
+    int id = (int) (uintptr_t) arg;
+
+    uint64_t fl = print_lock();
+    printf("Hello from CPU %i (asked for %i)\n", thread_current_id(), id);
+    print_unlock(fl);
+}
+
+int cmd_thread_test(ArgumentObject) {
+    int started = 0;
+
+    for (int i = 1; i < thread_total_count(); i++) {
+        if (thread_create_on(i, thread_test_task, (void*) (uintptr_t) i) >= 0) {
+            started++;
+        }
+    }
+
+    for (int i = 1; i < thread_total_count(); i++) {
+        thread_join(i);
+    }
+
+    printf("Ran a task on %i CPUs\n");
+
+    return 0;
+}
+
 void get_kernel_version(uint8_t *vb, uint32_t* vs) {
     iso9660_read_file("/data/ver.txt", vb, vs);
 }
-
 char* get_current_dir() {
     return current_dir;
 }

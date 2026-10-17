@@ -10,6 +10,8 @@
 #define IRQ1_KEYBOARD 0x01
 #define IRQ2_SLAVE 0x02
 
+#define IRQ12_MOUSE_SLAVE_BIT 0x04
+
 #define ICW1_INIT 0x10
 #define ICW1_HAS_ICW4 0x01
 
@@ -68,6 +70,9 @@ void pic_remap() {
 
 	mask_master &= ~(1 << IRQ0_TIMER);
 	mask_master &= ~(1 << IRQ1_KEYBOARD);
+	mask_master &= ~(1 << IRQ2_SLAVE);
+
+	mask_slave &= ~(1 << IRQ12_MOUSE_SLAVE_BIT);
 
 	port_outb(PORT_PIC1_DATA, mask_master);
 	port_wait();

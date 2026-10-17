@@ -6,35 +6,25 @@
 #include "string.h"
 #include "timer.h"
 #include "bool.h"
+#include "log.h"
+
+#include "mem/kheap.h"
 
 #include "x86_64/idt.h"
 #include "x86_64/pic.h"
 #include "x86_64/port.h"
 #include "x86_64/rtc.h"
+#include "x86_64/ps2.h"
 
 #include "drivers/storage/iso9660.h"
 #include "drivers/storage/ata.h"
 #include "drivers/storage/atapi.h"
 #include "drivers/storage/fat32.h"
 #include "drivers/keyboard/keyboard.h"
-#include "drivers/keyboard/ps2.h"
 #include "drivers/serial.h"
 #include "drivers/power.h"
 
 #define LEH_LOAD_ADDRESS 0x1000000
-
-static void* kapi_memset(void* ptr, uint8_t value, uint64_t size) {
-    uint8_t* p = (uint8_t*)ptr;
-    for (uint64_t i = 0; i < size; i++) p[i] = value;
-    return ptr;
-}
-
-static void* kapi_memcpy(void* dest, const void* src, uint64_t size) {
-    uint8_t* d = (uint8_t*)dest;
-    const uint8_t* s = (const uint8_t*)src;
-    for (uint64_t i = 0; i < size; i++) d[i] = s[i];
-    return dest;
-}
 
 bool validate_leh_header(const uint8_t* data, uint32_t file_size, LEHHeader* header) {
     if (data == NULL)
@@ -63,7 +53,7 @@ bool validate_leh_header(const uint8_t* data, uint32_t file_size, LEHHeader* hea
     return true;
 }
 
-int leh_exec_from(const char* path, bool useFAT) {
+int leh_exec_from_args(const char* path, bool useFAT, int argc, char** argv) {
     uint8_t* load_addr = (uint8_t*)LEH_LOAD_ADDRESS;
 
     uint32_t file_size;
@@ -131,6 +121,7 @@ int leh_exec_from(const char* path, bool useFAT) {
     kapi.iso9660_init = iso9660_init;
     kapi.iso9660_list_dir = iso9660_list_dir;
     kapi.iso9660_read_file = iso9660_read_file;
+    kapi.iso9660_get_file_size = iso9660_get_file_size;
     kapi.fat32_init = fat32_init;
     kapi.fat32_list_dir = fat32_list_dir;
     kapi.fat32_read_file = fat32_read_file;
@@ -146,12 +137,28 @@ int leh_exec_from(const char* path, bool useFAT) {
     kapi.ata_write_sector = ata_write_sector;
     kapi.atapi_init = atapi_init;
     kapi.atapi_read_sector = atapi_read_sector;
+    kapi.kmalloc = kmalloc;
+    kapi.kfree = kfree;
 
     // Jump past the header to the first byte of code and call it as a function
-    void (*program_main)(KernelAPI*) = (void(*)(KernelAPI*))(load_addr + sizeof(LEHHeader));    
-    program_main(&kapi);
+    int (*program_main)(int, char**, KernelAPI*) = (int(*)(int, char**, KernelAPI*))(load_addr + sizeof(LEHHeader));    
+    
+    int status = program_main(argc, argv, &kapi);
+    INF_PRINTF("Executed program %s with exit code %d\n", path, status);
+    if (status != 0) {
+        printf("%C4,0Program %s exited with error code %d\n", path, status);
+        return -4;
+    }
 
     return 1;
+}
+
+int leh_exec_from(const char* path, bool useFAT) {
+    return leh_exec_from_args(path, useFAT, 0, NULL);
+}
+
+int leh_exec_args(const char* path, int argc, char** argv) {
+    return leh_exec_from_args(path, false, argc, argv);
 }
 
 int leh_exec(const char* path) {

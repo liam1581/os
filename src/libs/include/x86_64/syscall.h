@@ -52,12 +52,51 @@
 
 // Args: rsi = character to print (low byte used)
 #define SYSCALL_PRINT_CHAR 0x00
-
 // Args: rsi = address of null-terminated string, rdx = length in bytes.
-// Exactly `length` bytes starting at that address are printed
-// -- the kernel doesn't search for '\0' itself
-// so pass the real string length (e.g. from strlen at call site)
 #define SYSCALL_PRINT_STRING 0x01
+// Args: rsi = address of null-terminated string, rdx = length in bytes.
+#define SYSCALL_PRINTLN 0x02
+// Args: rsi = signed integer to print
+#define SYSCALL_PRINT_INT 0x03
+// Args: rsi = unsigned integer to print as hex (without 0x prefix)
+#define SYSCALL_PRINT_UINT_HEX 0x04
+// Args: rsi = unsigned integer to print as binary (without 0b prefix)
+#define SYSCALL_PRINT_UINT_BIN 0x05
+// Args: rsi = unsigned integer to print as decimal
+#define SYSCALL_PRINT_UINT_DEC 0x06
+// Args: rsi = foreground color, rdx = background color(using 8 bits)
+#define SYSCALL_PRINT_SET_COLOR 0x07
+// Args: none
+#define SYSCALL_CLEAR_SCREEN 0x08
+
+// Args: none
+#define SYSCALL_ARCH_RESTART 0x10
+// Args: none
+#define SYSCALL_ARCH_SHUTDOWN 0x11
+
+// Args: rsi = baudrate
+#define SYSCALL_SERIAL_INIT 0x20
+// Args: rsi = byte to write
+#define SYSCALL_SERIAL_WRITE_BYTE 0x21
+// Args: rsi = address of null-terminated string, rdx = length in bytes.
+#define SYSCALL_SERIAL_WRITE_STRING 0x22
+// Args: rsi = address of null-terminated string, rdx = length in bytes.
+#define SYSCALL_SERIAL_WRITELN 0x23
+// Args: rsi = signed integer to print
+#define SYSCALL_SERIAL_WRITE_INT 0x24
+// Args: rsi = unsigned integer to print as hex (without 0x prefix)
+#define SYSCALL_SERIAL_WRITE_UINT_HEX 0x25
+// Args: rsi = unsigned integer to print as binary (without 0b prefix)
+#define SYSCALL_SERIAL_WRITE_UINT_BIN 0x26
+// Args: rsi = unsigned integer to print as decimal
+#define SYSCALL_SERIAL_WRITE_UINT_DEC 0x27
+// Args: none
+#define SYSCALL_SERIAL_CLOSE 0x28
+
+// Args: rsi = seconds to delay
+#define SYSCALL_DELAY_SECONDS 0x30
+// Args: rsi = minutes to delay
+#define SYSCALL_DELAY_MINUTES 0x31
 
 // Dispatcher shared by both entry paths (idt_handler_syscall_wrapped
 // in idt_.asm, and syscall_entry in syscall_.asm). Not meant to be

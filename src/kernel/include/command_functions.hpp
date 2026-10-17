@@ -24,11 +24,14 @@ int cmd_cre_dir(ArgumentObject args);
 int cmd_cp(ArgumentObject args);
 int cmd_mv(ArgumentObject args);
 int cmd_rm(ArgumentObject args);
+int cmd_rmdir(ArgumentObject args);
 int cmd_clear_file(ArgumentObject args);
 int cmd_write_file(ArgumentObject args);
 int cmd_overwrite_file(ArgumentObject args);
 int cmd_display_mem(ArgumentObject);
 int cmd_ver(ArgumentObject);
+int cmd_threads(ArgumentObject);
+int cmd_thread_test(ArgumentObject);
 
 void get_kernel_version(uint8_t *vb, uint32_t* vs);
 char* get_current_dir();

@@ -22,3 +22,8 @@ bool validate_leh_header(const uint8_t* data, uint32_t file_size, LEHHeader* hea
 
 int leh_exec(const char* path);
 int leh_exec_from(const char* path, bool useFat);
+
+// argv-carrying variants. argc may be 0 with argv NULL for "no
+// arguments" (what leh_exec/leh_exec_from above pass through).
+int leh_exec_args(const char* path, int argc, char** argv);
+int leh_exec_from_args(const char* path, bool useFat, int argc, char** argv);

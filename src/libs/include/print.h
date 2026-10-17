@@ -7,11 +7,12 @@
 void clear_screen();
 void printc(char character);
 void print(const char* string);
-void print_constant(const char* string);
 void println(const char* string);
 void printf(const char* fmt, ...);
 void print_set_color(uint8_t foreground, uint8_t background);
-static void print_int64_dec(int64_t value);
+void print_double(double value);
+void print_full_double(double value);
+void print_int64_dec(int64_t value);
 void print_uint64_dec(uint64_t value);
 void print_uint64_hex(uint64_t value);
 void print_uint64_bin(uint64_t value);
@@ -23,3 +24,6 @@ void move_cursor_down();
 void move_cursor_left();
 void move_cursor_right();
 void move_cursor_to_start();
+
+uint64_t print_lock();
+void print_unlock(uint64_t flags);

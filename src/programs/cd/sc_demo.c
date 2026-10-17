@@ -2,57 +2,28 @@
 #include "x86_64/syscall.h"
 #include <stdint.h>
 
-/*
- * Demonstrates the print_character / print_string syscalls added in
- * x86_64/syscall.h, via both entry paths: `int 0x80` and the faster
- * `syscall` instruction. This talks to the kernel directly through
- * those syscalls rather than through the KernelAPI table (`api`) the
- * loader hands us -- kapi is a separate, older mechanism (a plain
- * function-pointer table), unrelated to these.
- */
+static inline void syscall(uint64_t number, uint64_t arg1, uint64_t arg2, uint64_t arg3) {
+    (void)arg3;
 
-static inline void syscall_print_character_int80(char character) {
-    asm volatile (
-        "int $0x80"
-        :
-        : "D" ((uint64_t) SYSCALL_PRINT_CHAR),
-          "S" ((uint64_t) character)
-        : "memory"
-    );
-}
-
-static inline void syscall_print_string_int80(const char* str, uint64_t length) {
-    asm volatile (
-        "int $0x80"
-        :
-        : "D" ((uint64_t) SYSCALL_PRINT_STRING),
-          "S" ((uint64_t) str),
-          "d" (length)
-        : "memory"
-    );
-}
-
-// The `syscall` instruction clobbers rcx (return RIP) and r11 (saved
-// RFLAGS) -- same as the real x86-64 Linux ABI -- so both are listed
-// here even though our two syscalls don't use them as arguments.
-static inline void syscall_print_character_fast(char character) {
     asm volatile (
         "syscall"
         :
-        : "D" ((uint64_t) SYSCALL_PRINT_CHAR),
-          "S" ((uint64_t) character)
+        : "D" (number),
+          "S" (arg1),
+          "d" (arg2)
         : "rcx", "r11", "memory"
     );
 }
 
-static inline void syscall_print_string_fast(const char* str, uint64_t length) {
+static inline void int0x80(uint64_t number, uint64_t arg1, uint64_t arg2, uint64_t arg3) {
     asm volatile (
-        "syscall"
+        "int $0x80"
         :
-        : "D" ((uint64_t) SYSCALL_PRINT_STRING),
-          "S" ((uint64_t) str),
-          "d" (length)
-        : "rcx", "r11", "memory"
+        : "D" (number),
+          "S" (arg1),
+          "d" (arg2),
+          "c" (arg3)
+        : "memory"
     );
 }
 
@@ -65,19 +36,21 @@ static uint64_t str_length(const char* str) {
     return length;
 }
 
-LHE_ENTRY void main(KernelAPI* api) {
-    (void) api; // unused -- see the comment above
-
+LEH_ENTRY int main(int argc, char* argv[], KernelAPI* api) {
+    (void)argc;
+    (void)argv;
+    (void)api;
+    
     const char* via_int80 = "Hello from print_string via int 0x80!";
     const char* via_fast = "Hello from print_string via syscall!";
 
-    syscall_print_string_int80(via_int80, str_length(via_int80));
-    syscall_print_character_int80('\n');
+    syscall(SYSCALL_PRINTLN, (uint64_t) via_int80, str_length(via_int80), 0);
 
-    syscall_print_string_fast(via_fast, str_length(via_fast));
-    syscall_print_character_fast('\n');
+    syscall(SYSCALL_PRINTLN, (uint64_t) via_fast, str_length(via_fast), 0);
 
-    syscall_print_character_int80('A');
-    syscall_print_character_fast('B');
-    syscall_print_character_int80('\n');
+    syscall(SYSCALL_PRINT_CHAR, (uint64_t) 'A', 0, 0);
+    syscall(SYSCALL_PRINT_CHAR, (uint64_t) 'B', 0, 0);
+    syscall(SYSCALL_PRINTLN, (uint64_t) " ", str_length(" "), 0);
+
+    return 1;
 }

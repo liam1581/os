@@ -707,19 +707,7 @@ bool fat32_move_file(const char* src, const char* dest) {
     return fat32_delete_file(src);
 }
 
-bool fat32_delete_file(const char* path) {
-    if (!initialized) return false;
-    uint32_t parent; char filename[FAT32_MAX_FILENAME];
-    if (!split_path(path, &parent, filename)) return false;
-
-    uint32_t cluster; bool is_dir; uint32_t size;
-    if (!resolve_path(path, &cluster, &is_dir, &size)) return false;
-    if (is_dir) return false;
-
-    // Free cluster chain
-    fat_free_chain(cluster);
-
-    // Mark directory entry as deleted (0xE5)
+bool mark_entry_deleted(uint32_t parent, uint32_t cluster) {
     uint32_t dc = parent;
     while (dc < 0x0FFFFFF8) {
         uint32_t lba = cluster_to_lba(dc);
@@ -737,4 +725,41 @@ bool fat32_delete_file(const char* path) {
         dc = fat_get_next_cluster(dc);
     }
     return false;
+}
+
+bool fat32_delete_file(const char* path) {
+    if (!initialized) return false;
+    uint32_t parent; char filename[FAT32_MAX_FILENAME];
+    if (!split_path(path, &parent, filename)) return false;
+
+    uint32_t cluster; bool is_dir; uint32_t size;
+    if (!resolve_path(path, &cluster, &is_dir, &size)) return false;
+    if (is_dir) return false;
+
+    // Free cluster chain
+    fat_free_chain(cluster);
+
+    // Mark directory entry as deleted (0xE5)
+    return mark_entry_deleted(parent, cluster);
+}
+
+bool fat32_delete_dir(const char* path) {
+    if (!initialized) return false;
+    uint32_t parent; char dirname[FAT32_MAX_FILENAME];
+    if (!split_path(path, &parent, dirname)) return false;
+
+    uint32_t cluster; bool is_dir; uint32_t size;
+    if (!resolve_path(path, &cluster, &is_dir, &size)) return false;
+    if (!is_dir) return false;
+
+    if (cluster == root_cluster) return false;
+
+    struct FAT32Dir dir;
+    dir.count = 0;
+    if (!read_dir_cluster(cluster, &dir)) return false;
+    if (dir.count > 0) return false;
+
+    fat_free_chain(cluster);
+
+    return mark_entry_deleted(parent, cluster);
 }

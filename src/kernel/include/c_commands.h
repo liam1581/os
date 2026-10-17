@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 void init_iso();
+void init_disk();
 
 #if defined(__cplusplus)
 }

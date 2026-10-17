@@ -32,3 +32,4 @@ bool fat32_rename(const char* path, const char* new_name);
 bool fat32_copy_file(const char* src, const char* dest);
 bool fat32_move_file(const char* src, const char* dest);
 bool fat32_delete_file(const char* path);
+bool fat32_delete_dir(const char* path);

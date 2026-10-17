@@ -1,5 +1,6 @@
 #include "mem/kheap.h"
 #include "mem/pmm.h"
+#include "sync/spinlock.h"
 
 #define ALIGNMENT  16
 #define GROW_PAGES 4 // grow the heap in 16KiB chunks when it runs out of space
@@ -10,6 +11,7 @@ typedef struct block_header {
     struct block_header* next;
 } block_header_t;
 
+static spinlock_t heap_lock = SPINLOCK_INIT;
 static block_header_t* heap_head = NULL;
 static uint64_t used_bytes = 0;
 static uint64_t capacity_bytes = 0;
@@ -46,8 +48,7 @@ void kheap_init(void) {
     capacity_bytes = 0;
 }
 
-[[nodiscard("kmalloc's return value MUST BE USED!")]]
-void* kmalloc(size_t size) {
+void* kmalloc_locked(size_t size) {
     if (size == 0) return NULL;
     size = align_up(size, ALIGNMENT);
 
@@ -79,10 +80,18 @@ void* kmalloc(size_t size) {
 
     if (prev) prev->next = fresh; else heap_head = fresh;
 
-    return kmalloc(size);
+    return kmalloc_locked(size);
 }
 
-void kfree(void* ptr) {
+[[nodiscard("kmalloc's return value MUST BE USED!")]]
+void* kmalloc(size_t size) {
+    uint64_t flags = spin_lock(&heap_lock);
+    void* ptr = kmalloc_locked(size);
+    spin_unlock(&heap_lock, flags);
+    return ptr;
+}
+
+void kfree_locked(void* ptr) {
     if (!ptr) return;
 
     block_header_t* block = (block_header_t*)((uint8_t*)ptr - sizeof(block_header_t));
@@ -104,6 +113,12 @@ void kfree(void* ptr) {
             cur = cur->next;
         }
     }
+}
+
+void kfree(void* ptr) {
+    uint64_t flags = spin_lock(&heap_lock);
+    kfree_locked(ptr);
+    spin_unlock(&heap_lock, flags);
 }
 
 uint64_t kheap_used_bytes(void) {

@@ -15,6 +15,7 @@ extern "C" {
 enum class ArgumentType {
     ARG_INT,
     ARG_BOOL,
+    ARG_DOUBLE,
     ARG_STRING,
 };
 
@@ -43,9 +44,16 @@ public:
 
         Argument arguments[MAX_ARGUMENTS] = {};
         int argumentCount = 0;
+
+        // When true, argCount is a minimum rather than an exact
+        // count -- extra raw tokens beyond the declared arguments are
+        // allowed through and left for the command's own function to
+        // pull via ArgumentObject::getToken()/getTokenCount() (e.g.
+        // "run" passing them on as a program's argv).
+        bool variadic = false;
     };
 
-    void add(const char* commandName, int argCount);
+    void add(const char* commandName, int argCount, bool variadic = false);
     void helpMessage(const char* commandName, const char* helpMessage);
     void executes(const char* commandName, int (*func)(ArgumentObject));
 
@@ -69,6 +77,8 @@ public:
                 type = ArgumentType::ARG_INT;
             } else if constexpr (__is_same(T, bool)) {
                 type = ArgumentType::ARG_BOOL;
+            } else if constexpr (__is_same(T, double) || __is_same(T, float)) {
+                type = ArgumentType::ARG_DOUBLE;
             } else if constexpr (__is_same(T, const char*)) {
                 type = ArgumentType::ARG_STRING;
             } else {
@@ -106,6 +116,7 @@ public:
     ArgumentValue(ArgumentType type, const char* value, size_t length);
 
     operator int() const;
+    operator double() const;
     operator float() const;
     operator bool() const;
     operator const char*() const;
@@ -125,10 +136,16 @@ public:
     ArgumentValue getArgument(const char* argumentName) const;
     const char* raw() const;
 
+    // Raw, quote-aware tokens of the full argument string -- lets a
+    // command pull more arguments than it declared with argument<T>()
+    // (which is capped at MAX_ARGUMENTS). "run" uses this for the
+    // program's own argv: token 0 is the declared "file" argument,
+    // everything from token 1 onward is passed through as argc/argv.
+    int getTokenCount() const;
+    bool getToken(int index, char* output, size_t outputSize) const;
+
 private:
     const char* rawArguments;
     const Commands::Command* command;
     mutable char stringBuffers[MAX_ARGUMENTS][MAX_ARGUMENT_BUFFER];
-
-    bool getToken(int index, char* output, size_t outputSize) const;
 };

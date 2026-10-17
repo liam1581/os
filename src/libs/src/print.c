@@ -1,5 +1,6 @@
 #include "print.h"
 #include "bool.h"
+#include "log.h"
 #include "drivers/video/framebuffer.h"
 #include "drivers/video/fbprint.h"
 #include "x86_64/port.h"
@@ -188,6 +189,16 @@ void printf(const char* fmt, ...) {
                 break;
             }
 
+            case 'f': {
+                print_double(va_arg(args, double));
+                break;
+            }
+
+            case 'F': {
+                print_full_double(va_arg(args, double));
+                break;
+            }
+
             case 'x': {
                 print_uint64_hex(va_arg(args, unsigned int));
                 break;
@@ -239,6 +250,10 @@ void printf(const char* fmt, ...) {
 }
 
 void print_set_color(uint8_t foreground, uint8_t background) {
+    if (background == PRINT_COLOR_BLUE || background == PRINT_COLOR_LIGHT_BLUE) {
+        DBG_PRINT("Something calling set_color with blue/light blue bg");
+        DBG_PRINT(background == PRINT_COLOR_BLUE ? "Background is blue" : background == PRINT_COLOR_LIGHT_BLUE ? "Background is light blue" : "huh?");
+    }
     if (framebuffer_is_available()) {
         fbprint_set_color(foreground, background);
         return;
@@ -247,7 +262,162 @@ void print_set_color(uint8_t foreground, uint8_t background) {
     color = foreground + (background << 4);
 }
 
-static void print_int64_dec(int64_t value) {
+void print_double(double value) {
+    if (value < 0.0) {
+        printc('-');
+        value = -value;
+    }
+
+    uint64_t integer = (uint64_t)value;
+    double fractional = value - (double)integer;
+
+    print_int64_dec(integer);
+    printc('.');
+
+    for (int i = 0; i < 6; i++) {
+        fractional *= 10.0;
+        int digit = (int)fractional;
+        printc('0' + digit);
+        fractional -= digit;
+    }
+}
+
+void print_full_double(double value) {
+    union {
+        double d;
+        uint64_t u;
+    } bits = { value };
+
+    uint64_t sign = bits.u >> 63;
+    uint64_t exponent = (bits.u >> 52) & 0x7FF;
+    uint64_t fraction = bits.u & 0xFFFFFFFFFFFFFULL;
+
+    if (exponent == 0x7FF) { 
+        if (fraction != 0) {
+            print("NaN");
+        } else {
+            if (sign) {
+                print("-");
+            }
+            print("Inf");
+        }
+
+        return;
+    }
+
+    if (sign) {
+        print("-");
+    }
+
+    if (value == 0.0) {
+        print("0.0");
+        return;
+    }
+
+    if (value < 0.0)
+        value = -value;
+
+    int decimal_exponent = 0;
+
+    while (value >= 10.0) {
+        value /= 10.0;
+        decimal_exponent++;
+    }
+
+    while (value < 1.0) {
+        value *= 10.0;
+        decimal_exponent--;
+    }
+
+    char digits[18];
+    for (int i = 0; i < 17; i++) {
+        int digit = (int)value;
+        digits[i] = (char)('0' + digit);
+        value = (value - digit) * 10.0;
+    }
+
+    int round_digit = (int)value;
+
+    if (round_digit >= 5) {
+        int i = 16;
+
+        while (i >= 0 && digits[i] == '9') {
+            digits[i] = '0';
+            i--;
+        }
+
+        if (i >= 0) {
+            digits[i]++;
+        } else {
+            digits[0] = '1';
+
+            for (int j = 1; j < 17; j++) {
+                digits[j] = '0';
+            }
+            decimal_exponent++;
+        }
+    }
+
+    if (decimal_exponent >= 17 || decimal_exponent <= -5) {
+        printc(digits[0]);
+        printc('.');
+
+        for (int i = 1; i < 17; i++)
+            printc(digits[i]);
+
+        printc('e');
+
+        if (decimal_exponent >= 0) {
+            printc('+');
+        } else {
+            printc('-');
+            decimal_exponent = -decimal_exponent;
+        }
+
+        if (decimal_exponent >= 100) {
+            printc('0' + decimal_exponent / 100);
+            decimal_exponent %= 100;
+
+            printc('0' + decimal_exponent / 10);
+            printc('0' + decimal_exponent % 10);
+        } else if (decimal_exponent >= 10) {
+            printc('0' + decimal_exponent / 10);
+            printc('0' + decimal_exponent % 10);
+        } else {
+            printc('0' + decimal_exponent);
+        }
+
+        return;
+    }
+
+    if (decimal_exponent >= 0) {
+        int integer_digits = decimal_exponent + 1;
+
+        for (int i = 0; i < integer_digits; i++) {
+            if (i < 17)
+                printc(digits[i]);
+            else
+                printc('0');
+        }
+
+        printc('.');
+
+        for (int i = integer_digits; i < 17; i++)
+            printc(digits[i]);
+
+    } else {
+        printc('0');
+        printc('.');
+
+        for (int i = -1; i > decimal_exponent; i--)
+            printc('0');
+
+        for (int i = 0; i < 17; i++)
+            printc(digits[i]);
+    }
+}
+
+void print_int64_dec(int64_t value) {
     if (value < 0) {
         printc('-');
         print_uint64_dec((uint64_t)(-(value + 1)) + 1);
@@ -494,4 +664,12 @@ void move_cursor_to_start() {
     row = 0;
     col = 0;
     move_cursor(cursor_row, cursor_col);
+}
+
+uint64_t print_lock(void) {
+    return fb_lock_acquire();
+}
+
+void print_unlock(uint64_t flags) {
+    fb_lock_release(flags);
 }

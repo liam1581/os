@@ -1,5 +1,10 @@
 extern idt_handler_keyboard
 extern idt_handler_timer
+extern idt_handler_syscall
+extern idt_handler_mouse
+extern idt_handler_ipi_wake
+extern idt_handler_spurious
+
 global idt_load
 
 idt_load:
@@ -58,3 +63,8 @@ idt_load:
 
 WRAPPED_HANDLER idt_handler_keyboard
 WRAPPED_HANDLER idt_handler_timer
+WRAPPED_HANDLER idt_handler_mouse
+WRAPPED_HANDLER idt_handler_ipi_wake
+WRAPPED_HANDLER idt_handler_spurious
+
+WRAPPED_HANDLER idt_handler_syscall

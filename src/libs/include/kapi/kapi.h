@@ -12,7 +12,7 @@ typedef struct {
     void (*printc)(char character);
     void (*print)(const char* string);
     void (*println)(const char* string);
-    void (*printf)(char* fmt, ...);
+    void (*printf)(const char* fmt, ...);
     void (*print_set_color)(uint8_t foreground, uint8_t background);
     void (*print_uint64_dec)(uint64_t value);
     void (*print_uint64_hex)(uint64_t value);
@@ -45,8 +45,10 @@ typedef struct {
     void (*delay_s)(uint32_t s);
     void (*delay_min)(uint32_t min);
 
-    // LHE
+    // LEH
     int (*leh_exec)(const char* path);
+    int (*leh_exec_args)(const char* path, int argc, char** argv);
+    int (*leh_exec_from_args)(const char* path, bool useFat, int argc, char** argv);
 
     // PS2
     uint8_t (*ps2_read_scan_code)();
@@ -86,6 +88,7 @@ typedef struct {
     bool (*iso9660_init)();
     bool (*iso9660_list_dir)(const char* path, struct ISO9660Dir* out);
     bool (*iso9660_read_file)(const char* path, uint8_t* buffer, uint32_t* out_size);
+    uint32_t (*iso9660_get_file_size)(const char* path);
 
     // FAT32
     bool (*fat32_init)();
@@ -109,6 +112,18 @@ typedef struct {
     // ATAPI
     bool (*atapi_init)();
     bool (*atapi_read_sector)(uint32_t lba, uint8_t* buffer);
+
+    // Memory
+    void* (*kmalloc)(size_t size);
+    void (*kfree)(void* ptr);
+
+    int (*thread_total_count)(void);
+    int (*thread_available_count)(void);
+    int (*thread_create)(void (*entry)(void*), void* arg);
+    int (*thread_create_on)(int id, void (*entry)(void*), void* arg);
+    void (*thread_join)(int id);
+    void (*thread_yield)(void);
+    int (*thread_current_id)(void);
 } KernelAPI;
 
-#define LHE_ENTRY __attribute__((section(".text.entry")))
+#define LEH_ENTRY __attribute__((section(".text.entry")))

@@ -9,6 +9,10 @@
 #define RAM_WATCHDOG_FREQUENCY_HZ 10
 
 static void ram_watchdog_tick(void) {
+#if defined(DEBUG_INTERRUPTS) && defined(DEBUG_INT20)
+    INF_PRINTF("[INT] vector=0x20 (timer)\n");
+#endif
+
     fbcursor_tick();
     
     if (pmm_free_memory_bytes() == 0) {

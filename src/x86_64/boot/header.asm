@@ -14,9 +14,9 @@ header_start:
 	dw 5
 	dw 0
 	dd 20
-	dd 1152
-	dd 864
-	dd 32
+	dd 1152 ; width
+	dd 864 ; height
+	dd 32 ; depth
 
 	align 8, db 0
 

@@ -74,7 +74,7 @@ void testing_handle_input(struct KeyboardEvent event) {
         bool testing_altgr = keyboard_is_down(KEY_CODE_ALT_RIGHT);
         bool testing_ctrl = keyboard_is_down(KEY_CODE_CTRL_LEFT) || keyboard_is_down(KEY_CODE_CTRL_RIGHT);
         bool testing_alt = keyboard_is_down(KEY_CODE_ALT_LEFT);
-        bool testing_menukey = keyboard_is_down(KEY_CODE_MENU_KEY);
+        //bool testing_menukey = keyboard_is_down(KEY_CODE_MENU_KEY);
 
         if (testing_ctrl && testing_alt && event.code == KEY_CODE_E) {
             testing_cmdMode = !testing_cmdMode;

@@ -1,8 +1,21 @@
 extern idt_handler_syscall
+extern thread_current_fpu_state
 global syscall_entry
 
+; Must match GDT_SELECTOR_CS_KERNEL / GDT_SELECTOR_SS_KERNEL (gdt.h).
 %define KERNEL_CS 0x08
-%define KERNEL_SS 0x10
+; KERNEL_SS (0x10, the kernel data segment -- see gdt.h/main.asm) is
+; still required for the IA32_STAR setup (syscall_fast_init() in
+; syscall.c): on `syscall` *entry*, the CPU forces SS to STAR[47:32]+8
+; without validating the GDT contents at all, so that offset just
+; needs to exist. It is deliberately NOT used below when *returning*
+; via iretq -- iretq performs full descriptor validation on a non-null
+; SS, unlike entry, and nothing else in this kernel has ever loaded a
+; real SS selector (main.asm never sets one -- every existing
+; interrupt return has always resumed with a null SS). Loading SS with
+; a null selector is specifically permitted when the target CPL is 0,
+; which is always true here, so returning with SS=0 matches what
+; every other return path in this kernel already does successfully.
 
 section .text
 
@@ -85,7 +98,7 @@ syscall_entry:
 	; Build the 5-entry iretq frame. iretq pops RIP first, so it must
 	; end up on top of the stack -- pushed last, in this order:
 	; SS, RSP, RFLAGS, CS, RIP.
-	push qword KERNEL_SS
+	push qword 0 ; SS = null -- see the comment above KERNEL_CS/KERNEL_SS
 	push rax
 	push r11
 	push qword KERNEL_CS

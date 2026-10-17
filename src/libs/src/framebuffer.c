@@ -6,6 +6,7 @@
 #include "log.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
 
 static uint8_t* framebuffer = NULL;
@@ -266,6 +267,91 @@ void framebuffer_put_pixel(
         address[i] =
             (uint8_t)((pixel >> (i * 8)) & 0xFF);
     }
+}
+
+
+/*
+ * Inverse of scale_color(): expand a mask_size-bit channel value back
+ * up to 8 bits.
+ */
+static uint8_t unscale_color(
+    uint32_t value,
+    uint8_t mask_size
+) {
+    if (mask_size == 0)
+        return 0;
+
+    if (mask_size >= 8)
+        return (uint8_t) value;
+
+    uint32_t max_value =
+        (1u << mask_size) - 1u;
+
+    if (max_value == 0)
+        return 0;
+
+    return (uint8_t)((value * 255u + max_value / 2u) / max_value);
+}
+
+
+/*
+ * Reads a pixel back out of the framebuffer, inverse of
+ * framebuffer_put_pixel(). Used to save/restore whatever was under a
+ * cursor sprite before/after moving it, so drawing one doesn't
+ * permanently overwrite the content underneath.
+ */
+bool framebuffer_get_pixel(
+    uint32_t x,
+    uint32_t y,
+    uint8_t* r,
+    uint8_t* g,
+    uint8_t* b
+) {
+    if (!framebuffer_available)
+        return false;
+
+    if (x >= framebuffer_width ||
+        y >= framebuffer_height) {
+
+        return false;
+    }
+
+    uint32_t bytes_per_pixel =
+        framebuffer_bpp / 8;
+
+    uint8_t* address =
+        framebuffer +
+        (y * framebuffer_pitch) +
+        (x * bytes_per_pixel);
+
+    uint32_t pixel = 0;
+
+    for (uint32_t i = 0;
+         i < bytes_per_pixel && i < 4;
+         i++) {
+
+        pixel |=
+            ((uint32_t) address[i]) << (i * 8);
+    }
+
+    uint32_t red_mask =
+        (red_mask_size >= 32) ? 0xFFFFFFFFu : ((1u << red_mask_size) - 1u);
+
+    uint32_t green_mask =
+        (green_mask_size >= 32) ? 0xFFFFFFFFu : ((1u << green_mask_size) - 1u);
+
+    uint32_t blue_mask =
+        (blue_mask_size >= 32) ? 0xFFFFFFFFu : ((1u << blue_mask_size) - 1u);
+
+    uint32_t red_value = (pixel >> red_position) & red_mask;
+    uint32_t green_value = (pixel >> green_position) & green_mask;
+    uint32_t blue_value = (pixel >> blue_position) & blue_mask;
+
+    if (r) *r = unscale_color(red_value, red_mask_size);
+    if (g) *g = unscale_color(green_value, green_mask_size);
+    if (b) *b = unscale_color(blue_value, blue_mask_size);
+
+    return true;
 }
 
 

@@ -5,6 +5,7 @@
 #include "log.h"
 
 #include "mem/mem.h"
+#include "sync/spinlock.h"
 #include "drivers/files/os/ttf.h"
 #include "drivers/files/os/ttf_rasterizer.h"
 #include "drivers/storage/iso9660.h"
@@ -12,6 +13,11 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stddef.h>
+
+static rspinlock_t fb_lock = RSPINLOCK_INIT;
+
+uint64_t fb_lock_acquire(void) { return rspin_lock(&fb_lock); }
+void fb_lock_release(uint64_t flags) { rspin_unlock(&fb_lock, flags); }
 
 /*
  * ============================================================
@@ -286,7 +292,6 @@ int fbprint_init(uint64_t multiboot_info_addr)
     // ttf_get_glyph_outline) dereferences through it -- unlike the old
     // LFH bitmap font, which copied its (much smaller) glyph data into
     // a static array and could free its source buffer immediately.
-
     uint8_t* fontBuffer = (uint8_t*)kmalloc(fontFileSize);
     uint32_t bytesRead;
 
@@ -655,8 +660,22 @@ static void fb_newline(void)
         }
     }
 
-    cursor_y =
-        framebuffer.height - CHAR_HEIGHT;
+    /*
+     * Use the same cursor_row * CHAR_HEIGHT formula every other
+     * cursor-positioning function uses (fbmove_cursor_up/down,
+     * fbdelete_last_char, ...), rather than deriving this
+     * independently from framebuffer.height. The two only agree when
+     * framebuffer.height is an exact multiple of CHAR_HEIGHT -- for
+     * any other resolution there's a few-pixel leftover remainder at
+     * the very bottom of the screen (never drawn into, harmless on
+     * its own), and framebuffer.height - CHAR_HEIGHT lands one
+     * remainder short of where cursor_row * CHAR_HEIGHT puts the same
+     * row. That drift was invisible until something else recomputed
+     * cursor_y from cursor_row (e.g. backspacing onto the previous
+     * line), at which point the cursor would visibly snap up by that
+     * remainder.
+     */
+    cursor_y = cursor_row * CHAR_HEIGHT;
 }
 
 
@@ -1141,8 +1160,10 @@ void fbcursor_poll(void)
         return;
     }
 
+    uint64_t fl = fb_lock_acquire();
     cursor_last_toggle_tick = now;
     cursor_paint(!cursor_bar_drawn);
+    fb_lock_release(fl);
 }
 
 // Erases the bar (if currently drawn) at the cursor's position

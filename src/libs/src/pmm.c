@@ -1,3 +1,4 @@
+#include "sync/spinlock.h"
 #include "mem/pmm.h"
 #include "multiboot2.h"
 #include "log.h"
@@ -19,6 +20,7 @@ extern uint8_t _kernel_end[];
 static uint8_t bitmap[PMM_BITMAP_SIZE];
 static uint64_t total_frames = 0; // frames within detected RAM (bitmap universe)
 static uint64_t used_frames = 0;  // used frames within [0, total_frames)
+static spinlock_t pmm_lock = SPINLOCK_INIT;
 static uint64_t search_hint = 0;  // first frame that might still be free
 
 static inline void set_used(uint64_t frame) {
@@ -106,7 +108,7 @@ void pmm_init(uint64_t multiboot_info_addr) {
     reserve_range(multiboot_info_addr, mb_size);
 }
 
-uint64_t pmm_alloc_frame(void) {
+uint64_t pmm_alloc_frame_locked(void) {
     for (uint64_t f = search_hint; f < total_frames; f++) {
         if (!is_used(f)) {
             set_used(f);
@@ -125,10 +127,25 @@ uint64_t pmm_alloc_frame(void) {
     return 0; // out of memory
 }
 
-void pmm_free_frame(uint64_t phys_addr) {
+void pmm_free_frame_locked(uint64_t phys_addr) {
     uint64_t frame = phys_addr / PMM_FRAME_SIZE;
     if (frame < search_hint) search_hint = frame;
     set_free(frame);
+}
+
+uint64_t pmm_alloc_frame(void) {
+    uint64_t flags = spin_lock(&pmm_lock);
+    uint64_t frame = pmm_alloc_frame_locked();
+    spin_unlock(&pmm_lock, flags);
+    return frame;
+}
+
+void pmm_free_frame(uint64_t phys_addr) {
+    uint64_t flags = spin_lock(&pmm_lock);
+    uint64_t frame = phys_addr / PMM_FRAME_SIZE;
+    if (frame < search_hint) search_hint = frame;
+    set_free(frame);
+    spin_unlock(&pmm_lock, flags);
 }
 
 // Finds and reserves `count` physically consecutive free frames, so a
@@ -137,7 +154,7 @@ void pmm_free_frame(uint64_t phys_addr) {
 // (a multiboot module, the multiboot info struct, etc.) happens to sit
 // in the middle of the run. Same two-pass search as pmm_alloc_frame():
 // scan forward from search_hint, then wrap around from frame 0.
-uint64_t pmm_alloc_contiguous(uint64_t count) {
+uint64_t pmm_alloc_contiguous_locked(uint64_t count) {
     if (count == 0) return 0;
     if (count == 1) return pmm_alloc_frame();
 
@@ -166,6 +183,13 @@ uint64_t pmm_alloc_contiguous(uint64_t count) {
     }
 
     return 0; // no contiguous run of that size available
+}
+
+uint64_t pmm_alloc_contiguous(uint64_t count) {
+    uint64_t flags = spin_lock(&pmm_lock);
+    uint64_t base = pmm_alloc_contiguous_locked(count);
+    spin_unlock(&pmm_lock, flags);
+    return base;
 }
 
 uint64_t pmm_total_memory_bytes(void) {
